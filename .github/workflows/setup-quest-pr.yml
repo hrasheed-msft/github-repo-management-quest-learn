@@ -162,63 +162,9 @@ jobs:
         env:
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           script: |
             const branchName = process.env.BRANCH_NAME;
-
-            const prBody = [
-              "## Description",
-              "",
-              "This PR adds comprehensive integration documentation for TechFlow, including:",
-              "",
-              "- New advanced integration tutorial",
-              "- Quick reference guide for common commands",
-              "- Updated README with recent changes",
-              "",
-              "## Changes Made",
-              "",
-              "### New Files",
-              "- docs/sample-changes/new-tutorial.md - Step-by-step integration guide",
-              "- docs/sample-changes/quick-reference.md - Quick command reference",
-              "",
-              "### Modified Files",
-              "- README.md - Added recent updates section",
-              "",
-              "## Testing",
-              "- [x] All code examples tested",
-              "- [x] Links verified", 
-              "- [x] Spell checked",
-              "- [ ] Reviewed by documentation team",
-              "",
-              "## Screenshots",
-              "N/A - Documentation only",
-              "",
-              "## Notes for Reviewers",
-              "",
-              "Please pay special attention to:",
-              "- Technical accuracy of integration examples",
-              "- Completeness of troubleshooting section",
-              "- Link validity",
-              "",
-              "## Related Issues",
-              "Closes #123",
-              "",
-              "---",
-              "",
-              "**⚠️ This is a sample PR for Quest Scenario 2**",
-              "",
-              "This PR intentionally includes some issues for review practice:",
-              "- Outdated Python version reference (Python 2.7)",
-              "- Broken link to legacy-setup.md",
-              "- Link to old domain (old-docs.example.com)",
-              "- Typo: \"experiance\" instead of \"experience\"",
-              "",
-              "Use GitHub Copilot to:",
-              "1. Review this PR with @workspace",
-              "2. Identify the issues",
-              "3. Generate constructive feedback",
-              "4. Suggest fixes"
-            ].join('\\n');
 
             const pr = await github.rest.pulls.create({
               owner: context.repo.owner,
@@ -226,7 +172,60 @@ jobs:
               title: '[Quest Sample] Add advanced integration tutorials',
               head: branchName,
               base: 'main',
-              body: prBody,
+              body: `## Description
+
+              This PR adds comprehensive integration documentation for TechFlow, including:
+
+              - New advanced integration tutorial
+              - Quick reference guide for common commands
+              - Updated README with recent changes
+
+              ## Changes Made
+
+              ### New Files
+              - \`docs/sample-changes/new-tutorial.md\` - Step-by-step integration guide
+              - \`docs/sample-changes/quick-reference.md\` - Quick command reference
+
+              ### Modified Files
+              - \`README.md\` - Added recent updates section
+
+              ## Testing
+              - [x] All code examples tested
+              - [x] Links verified
+              - [x] Spell checked
+              - [ ] Reviewed by documentation team
+
+              ## Screenshots
+              N/A - Documentation only
+
+              ## Notes for Reviewers
+
+              Please pay special attention to:
+              - Technical accuracy of integration examples
+              - Completeness of troubleshooting section
+              - Link validity
+
+              ## Related Issues
+              Closes #123
+
+              ---
+
+              **⚠️ This is a sample PR for Quest Scenario 2**
+
+              This PR intentionally includes some issues for review practice:
+              - Outdated Python version reference (Python 2.7)
+              - Broken link to legacy-setup.md
+              - Link to old domain (old-docs.example.com)
+              - Typo: "experiance" instead of "experience"
+
+              Use GitHub Copilot to:
+              1. Review this PR with @workspace
+              2. Identify the issues
+              3. Generate constructive feedback
+              4. Suggest fixes
+
+              ---
+              *This is a sample PR for Quest Scenario 2. Part of GitHub Copilot Repository Management Quest.*`,
               labels: ['quest-sample', 'documentation']
             });
 

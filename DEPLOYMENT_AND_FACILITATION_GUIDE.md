@@ -97,6 +97,13 @@ Option B - Download ZIP:
    # or download from https://cli.github.com/
    ```
 
+**Important Notes**
+
+In order to get the workflows working, you will need to do one of two things:
+
+1. Create a Personal Access Token under Profile > Settings > Developer Settings > Personal Access Tokens > Fine Grained Tokens > Generate new token > "Repository Access" > "Only select repositories" > Add permissions (Actions, Workflows, Pull Requests). Then use `github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}`
+1. Repository settings > Actions > General > "Workflow Permissions" > "Allow GitHub Actions to create and approve pull requests. Then use `github-token: ${{ secrets.GITHUB_TOKEN }}`
+
 **Step 3: Start the Quest**
 
 1. Read [README.md](README.md)
