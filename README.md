@@ -53,10 +53,9 @@ This quest uses **real Microsoft Learn modules** in the `learn-pr/wwl/` folder a
     - https://marketplace.visualstudio.com/items?itemName=GitHub.copilot
     - https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat
 1. **Activate GitHub Copilot** - Sign in with your GitHub account and link your account with your GitHub enterprise license: https://copilot.github.microsoft.com/
-Add two MCP servers in the GitHub Copilot extension - - https://code.visualstudio.com/mcp
-    - [GitHub]GitHub
-    - [Microsoft.docs.mcp]Microsoft.docs.mcp
-1. **GitHub account** - Required for forking and running workflows
+1. Add two MCP servers in the GitHub Copilot extension - - https://code.visualstudio.com/mcp
+    - GitHub
+    - Microsoft.docs.mcp
 
 ### Repository Setup
 
@@ -66,8 +65,8 @@ Add two MCP servers in the GitHub Copilot extension - - https://code.visualstudi
 
 2. **Clone your fork** (replace `[your-username]` with your GitHub username):
    ```bash
-   git clone https://github.com/[your-username]/github-repo-management-quest.git
-   cd github-repo-management-quest
+   git clone https://github.com/[your-username]/github-repo-management-quest-learn.git
+   cd github-repo-management-quest-learn
    code .
    ```
 
