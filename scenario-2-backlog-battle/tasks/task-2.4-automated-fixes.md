@@ -56,6 +56,8 @@ The fastest way to fix simple issues is to **assign them directly to GitHub Copi
    - Click **Assignees** → Select **Copilot**
    - Or use the keyboard shortcut: Press `a` then type `copilot`
 
+   ![Assign issue to Copilot](../../media/assign_to_copilot.png)
+
 4. **Watch Copilot work:**
    - A comment appears: "Copilot is working on this issue..."
    - Within seconds to minutes, a PR link appears
