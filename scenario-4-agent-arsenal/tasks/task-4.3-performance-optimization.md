@@ -78,14 +78,13 @@ Analyze the provided content using rapid assessment methodology:
 - [ ] Performance: Scannable and user-friendly?
 
 **Output Format (per file):**
-```
-FILE: [filename]
-SCORE: [1-10] (Overall quality assessment)
-STATUS: [PASS/REVIEW/FAIL]
-ISSUES: [Top 2 issues only]
-FIXES: [Specific action items]
-EFFORT: [S/M/L for time required]
-```
+
+    FILE: [filename]
+    SCORE: [1-10] (Overall quality assessment)
+    STATUS: [PASS/REVIEW/FAIL]
+    ISSUES: [Top 2 issues only]
+    FIXES: [Specific action items]
+    EFFORT: [S/M/L for time required]
 
 **Batch Summary:**
 - Files analyzed: [count]
@@ -122,56 +121,14 @@ For each issue, determine:
 - Otherwise → Standard triage
 
 **Output Format:**
-```
-ISSUE: [title]
-CATEGORY: [type]-[priority]-[effort]
-ACTION: [immediate next step]
-OWNER: [suggested team/person]
-TIMELINE: [when to address]
-```
+
+    ISSUE: [title]
+    CATEGORY: [type]-[priority]-[effort]
+    ACTION: [immediate next step]
+    OWNER: [suggested team/person]
+    TIMELINE: [when to address]
 
 Process efficiently, ask for clarification only if absolutely necessary.
-```
-
-### 3. Agent Performance Monitoring
-
-Create an agent that monitors and optimizes other agents. Create a file named `performance-monitor.agent.md` in your `.github/agents/` folder:
-
-```markdown
----
-name: Performance Monitor
-description: Meta-agent that monitors and optimizes other agents' performance
----
-
-You are a performance monitoring specialist for AI agent systems.
-
-**Monitoring Responsibilities:**
-- Track agent response times and accuracy
-- Identify performance bottlenecks and optimization opportunities
-- Monitor output quality and consistency
-- Suggest agent configuration improvements
-- Report on system-wide performance metrics
-
-**Performance Analysis Framework:**
-1. **Response Quality**: Accuracy, completeness, actionability
-2. **Efficiency**: Speed, resource usage, workflow optimization
-3. **Consistency**: Output format, tone, reliability
-4. **User Experience**: Ease of use, clarity, helpfulness
-5. **System Integration**: How well agents work together
-
-**Optimization Recommendations:**
-Always provide specific, implementable improvements:
-- Agent instruction refinements
-- Prompt optimization suggestions
-- Workflow efficiency improvements
-- Quality assurance enhancements
-
-**Performance Report Format:**
-- Agent Performance Scores (1-10 scale)
-- Key Performance Indicators
-- Optimization Opportunities (ranked by impact)
-- Implementation Recommendations
-- Success Metrics for tracking improvement
 ```
 
 ## Performance Testing Scenarios
@@ -181,18 +138,21 @@ Always provide specific, implementable improvements:
 Measure agent response times with standardized tasks:
 
 1. **Simple Analysis Task** (target: <30 seconds)
-   ```
+
+   ```text
    @content-strategist-v2 Quick assessment: What are the top 3 issues with scenario-1-inheritance/challenge-repo/README.md?
    ```
 
 2. **Medium Complexity Task** (target: <2 minutes)
-   ```
+
+   ```text
    @technical-validator Rapid technical review: scenario-1-inheritance/challenge-repo/docs/getting-started.md
    ```
 
 3. **Complex Multi-Agent Task** (target: <5 minutes)
-   ```
-   #batch-content-analysis @workspace Analyze all markdown files in scenario-1-inheritance/challenge-repo/
+
+   ```text
+   #prompt:batch-content-analysis @workspace Analyze all markdown files in scenario-1-inheritance/challenge-repo/
    ```
 
 ### Test 2: Accuracy Validation
@@ -297,8 +257,7 @@ Update dashboard weekly for continuous improvement tracking.
 - [ ] Baseline performance metrics established
 - [ ] Agent files (`.agent.md`) optimized for speed and accuracy
 - [ ] Batch processing prompt files created and tested
-- [ ] Performance monitoring prompts implemented
-- [ ] Scalability testing completed with results documented
+- [ ] Speed and accuracy testing completed with results documented
 - [ ] Continuous improvement process established
 
 ## Next Steps

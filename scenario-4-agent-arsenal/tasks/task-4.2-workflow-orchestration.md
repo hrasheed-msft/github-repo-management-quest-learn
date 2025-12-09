@@ -22,6 +22,17 @@ Multiple agents analyze the same content simultaneously, then results are synthe
 
 Workflow adapts based on initial findings, routing to different agents as needed.
 
+## Prompt Writing Conventions
+
+When writing workflow prompts, you'll see text in brackets like `[APPROVED/NEEDS REVISION]` or `[description of expected content]`. These are **placeholder patterns** that guide Copilot's output:
+
+| Pattern | Meaning | Example |
+|---------|---------|---------|
+| `[OPTION1/OPTION2/OPTION3]` | Copilot chooses one value | `[APPROVED/NEEDS REVISION/BLOCKED]` → outputs `APPROVED` |
+| `[Description]` | Copilot fills in that type of content | `[Must-fix items]` → outputs actual issues found |
+
+This convention helps ensure structured, consistent outputs from your workflow prompts.
+
 ## Workflow 1: New Content Publication Pipeline
 
 Create a file named `content-publication-pipeline.prompt.md` in your `.github/prompts/` folder:
@@ -243,21 +254,34 @@ description: Workflow with built-in feedback loops and continuous improvement
 **Iterative Improvement Workflow:**
 
 **Cycle 1: Initial Analysis**
-- Run complete assessment with all agents
-- Identify top 3 improvement opportunities
-- Implement highest-priority fixes
+@qa-coordinator: Run complete assessment and identify top 3 improvement opportunities:
+- Synthesize findings from all specialist perspectives
+- Prioritize issues by impact and effort
+- Recommend highest-priority fixes
 
 **Cycle 2: Validation and Refinement**
-- Re-analyze improved content
+@technical-validator: Re-analyze improved content:
+- Verify fixes were implemented correctly
 - Measure improvement effectiveness
+- Identify any regressions or new issues
+
+@content-strategist: Evaluate strategic impact:
+- Assess alignment with content goals
 - Identify next iteration opportunities
+- Update content roadmap as needed
 
 **Cycle 3: Optimization and Scaling**
-- Apply successful patterns to other content
-- Document best practices and lessons learned
-- Plan next improvement cycle
+@performance-optimizer: Apply successful patterns:
+- Document what worked and why
+- Identify similar content for improvement
+- Create templates for repeatable fixes
 
-Create self-improving workflow that gets better over time.
+@qa-coordinator: Plan next improvement cycle:
+- Summarize lessons learned
+- Update quality standards based on findings
+- Schedule next review cycle
+
+**Output:** Improvement cycle report with metrics, patterns, and next steps.
 ```
 
 ## Success Criteria

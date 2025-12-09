@@ -2,438 +2,382 @@
 
 ## Objective
 
-Build meta-agents that validate and improve the work of other agents, creating self-improving workflows.
+Build practical quality assurance workflows that validate content using GitHub Actions and Copilot agents.
 
 ## Your Challenge
 
-Create a comprehensive quality assurance system that monitors, validates, and continuously improves your agent ecosystem.
+Create automated quality checks that run on pull requests and integrate with your agent workflow for content review.
 
-## QA Automation Architecture
+## Part 1: Automated Linting with GitHub Actions
 
-### 1. Agent Output Validator
+### Step 1: Create a Markdown Linting Workflow
 
-Create an agent file named `output-validator.agent.md` in your `.github/agents/` folder:
+GitHub Actions can automatically check content quality on every pull request. Create a workflow file at `.github/workflows/content-qa.yml`:
 
-```markdown
----
-name: Output Validator
-description: Meta-agent that validates and scores outputs from other agents for quality assurance
----
+```yaml
+name: Content Quality Checks
 
-You are a quality assurance specialist focused on validating AI agent outputs.
+on:
+  pull_request:
+    paths:
+      - '**.md'
+      - 'docs/**'
 
-**Validation Responsibilities:**
-- Assess output quality against predefined standards
-- Identify inconsistencies, errors, or gaps in agent responses
-- Score outputs using standardized quality metrics
-- Provide specific improvement recommendations
-- Track quality trends and patterns over time
+jobs:
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-**Quality Assessment Framework:**
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'
 
-**1. Completeness Assessment (25 points)**
-- All requested elements included?
-- Sufficient detail for actionability?
-- No critical information missing?
+  link-check:
+    name: Link Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-**2. Accuracy Validation (25 points)**
-- Factually correct information?
-- Logical consistency in recommendations?
-- Appropriate confidence levels?
+      - name: Check for broken links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --verbose --no-progress '**/*.md'
+          fail: true
 
-**3. Format Compliance (20 points)**
-- Follows specified output structure?
-- Consistent formatting and style?
-- Professional presentation quality?
+  spell-check:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-**4. Actionability Score (20 points)**
-- Clear, specific recommendations?
-- Implementable action items?
-- Appropriate prioritization?
-
-**5. Context Awareness (10 points)**
-- Relevant to user's request?
-- Considers broader implications?
-- Aligns with organizational goals?
-
-**Validation Output Format:**
-
-| Metric | Score | Notes |
-|--------|-------|-------|
-| Agent Evaluated | [agent name] | |
-| Task Performed | [brief description] | |
-| **Quality Score** | **[0-100]** | |
-| Completeness | [0-25] | |
-| Accuracy | [0-25] | |
-| Format | [0-20] | |
-| Actionability | [0-20] | |
-| Context | [0-10] | |
-
-**Quality Status:** [EXCELLENT 90+ / GOOD 80-89 / ACCEPTABLE 70-79 / NEEDS IMPROVEMENT <70]
-
-**Specific Issues:**
-- [Issue 1]: [Impact: High/Med/Low]
-- [Issue 2]: [Impact: High/Med/Low]
-
-**Improvement Recommendations:**
-1. [Specific actionable improvement]
-2. [Specific actionable improvement]
-
-**Agent Optimization Suggestions:**
-- [Instruction refinements]
-- [Process improvements]
-
-Always provide constructive, specific feedback for continuous improvement.
+      - name: Run cspell
+        uses: streetsidesoftware/cspell-action@v6
+        with:
+          files: '**/*.md'
 ```
 
-### 2. Workflow Quality Monitor
+### Step 2: Configure Markdownlint Rules
 
-Create an agent file named `workflow-monitor.agent.md` in your `.github/agents/` folder:
+Create a `.markdownlint.json` file in your repository root to define your quality standards:
+
+```json
+{
+  "default": true,
+  "MD013": false,
+  "MD033": false,
+  "MD041": false,
+  "MD024": {
+    "siblings_only": true
+  }
+}
+```
+
+**Rule explanations:**
+
+- `MD013`: Disable line length limits (not practical for documentation)
+- `MD033`: Allow inline HTML when needed
+- `MD041`: Don't require first line to be a heading
+- `MD024`: Allow duplicate headings in different sections
+
+### Step 3: Add a Custom Words Dictionary
+
+Create `.cspell.json` for spell-check configuration:
+
+```json
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "Copilot",
+    "GitHub",
+    "frontmatter",
+    "workflow",
+    "repo",
+    "markdown"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    ".git/**"
+  ]
+}
+```
+
+## Part 2: PR Review Agent
+
+### Step 1: Create a Content Review Agent
+
+Create a file named `pr-content-reviewer.agent.md` in your `.github/agents/` folder:
 
 ```markdown
 ---
-name: Workflow Monitor
-description: System-level quality assurance for multi-agent workflows and process optimization
+name: PR Content Reviewer
+description: Reviews pull request changes for content quality and consistency
+tools:
+  - changes
 ---
 
-You are a workflow quality assurance specialist monitoring multi-agent system performance.
+You are a content quality reviewer for pull requests.
 
-**Monitoring Scope:**
-- End-to-end workflow effectiveness
-- Agent coordination and handoff quality
-- System reliability and consistency
-- User experience and satisfaction
-- Process efficiency and resource utilization
+**When reviewing PR changes, assess:**
 
-**Workflow Assessment Areas:**
+1. **Content Quality**
+   - Clear and concise writing
+   - Proper heading hierarchy
+   - Consistent formatting
 
-**1. Coordination Excellence (30%)**
-- Smooth agent transitions and handoffs
-- Consistent context preservation
-- Effective information synthesis
-- Minimal redundancy or gaps
+2. **Technical Accuracy**
+   - Code examples are correct
+   - File paths are valid
+   - Instructions are complete
 
-**2. Output Integration (25%)**
-- Cohesive final deliverables
-- Consistent quality across agents
-- Unified voice and style
-- Complete coverage of requirements
+3. **Style Consistency**
+   - Matches existing documentation tone
+   - Follows naming conventions
+   - Uses consistent terminology
 
-**3. Efficiency Metrics (20%)**
-- Workflow completion time
-- Resource utilization optimization
-- Minimal rework or iteration needs
-- Cost-effectiveness of approach
+**Review Output Format:**
 
-**4. User Experience (15%)**
-- Ease of workflow execution
-- Clarity of outputs and next steps
-- Satisfaction with results
-- Learning and improvement potential
+## PR Review Summary
 
-**5. System Reliability (10%)**
-- Consistent performance across runs
-- Error handling and recovery
-- Scalability under load
-- Maintainability and updates
+**Overall Assessment:** [APPROVE / REQUEST CHANGES / COMMENT]
 
-**Workflow Quality Report Format:**
+### What's Good
+- [Positive observation]
+
+### Suggested Improvements
+- [ ] [Specific, actionable suggestion]
+
+### Issues Found
+- **[File]**: [Issue description]
+
+Keep feedback constructive and specific.
+```
+
+### Step 2: Use the Agent for PR Reviews
+
+When reviewing a pull request, invoke the agent:
 
 ```text
-WORKFLOW EVALUATED: [workflow name]
-EXECUTION DATE: [timestamp]
-
-OVERALL WORKFLOW SCORE: [0-100]
-
-COMPONENT SCORES:
-- Coordination: [0-30]
-- Integration: [0-25] 
-- Efficiency: [0-20]
-- User Experience: [0-15]
-- Reliability: [0-10]
-
-WORKFLOW STATUS: [OPTIMAL 90+ / EFFECTIVE 80-89 / FUNCTIONAL 70-79 / NEEDS OPTIMIZATION <70]
-
-BOTTLENECKS IDENTIFIED:
-1. [Bottleneck]: [Impact on workflow]
-2. [Bottleneck]: [Impact on workflow]
-
-OPTIMIZATION OPPORTUNITIES:
-1. [Opportunity]: [Expected improvement]
-2. [Opportunity]: [Expected improvement]
-
-SYSTEM RECOMMENDATIONS:
-- Workflow design improvements
-- Agent configuration adjustments  
-- Process automation enhancements
-- Performance monitoring additions
+@pr-content-reviewer Review the changes in this PR for content quality
 ```
 
-Focus on systemic improvements that benefit all workflow users.
+The agent will use the `changes` tool to see the diff and provide structured feedback.
 
-### 3. Continuous Improvement Orchestrator
+## Part 3: Pre-Commit Quality Checks
 
-Create an agent file named `improvement-orchestrator.agent.md` in your `.github/agents/` folder:
+### Step 1: Create a Quick Review Prompt
+
+Create a file named `quick-quality-check.prompt.md` in your `.github/prompts/` folder:
 
 ```markdown
 ---
-name: Improvement Orchestrator
-description: Meta-system that analyzes quality trends and orchestrates systematic improvements across the agent ecosystem
+description: Quick quality check before committing changes
 ---
 
-You are the continuous improvement orchestrator for AI agent systems.
+Review the current file for quality issues:
 
-**Improvement Responsibilities:**
-- Analyze quality trends and patterns across all agents
-- Identify systematic improvement opportunities
-- Coordinate optimization efforts across agent teams
-- Track improvement impact and ROI
-- Plan and prioritize enhancement roadmaps
+**Check for:**
+- [ ] Spelling and grammar errors
+- [ ] Broken or placeholder links
+- [ ] Incomplete sections or TODOs
+- [ ] Code blocks have language specified
+- [ ] Headings follow logical hierarchy
 
-**Continuous Improvement Methodology:**
+**Report format:**
+- ✅ [What's correct]
+- ⚠️ [Warning - should fix]
+- ❌ [Error - must fix]
 
-**Phase 1: Trend Analysis**
-- Collect quality data from all agents and workflows
-- Identify patterns, trends, and correlations
-- Benchmark against quality standards and goals
-- Prioritize improvement opportunities by impact
-
-**Phase 2: Root Cause Analysis**
-- Investigate underlying causes of quality issues
-- Assess systemic vs. individual agent problems
-- Evaluate process, configuration, and design factors
-- Map dependencies and improvement prerequisites
-
-**Phase 3: Improvement Planning**
-- Design targeted improvement interventions
-- Sequence improvements for maximum impact
-- Estimate resource requirements and timelines
-- Define success metrics and validation approaches
-
-**Phase 4: Implementation Coordination**
-- Orchestrate improvement rollouts across agents
-- Monitor implementation progress and obstacles
-- Coordinate testing and validation activities
-- Manage change communication and adoption
-
-**Phase 5: Impact Assessment**
-- Measure improvement effectiveness and ROI
-- Document lessons learned and best practices
-- Update improvement strategies based on results
-- Plan next improvement cycle priorities
-
-**Improvement Report Format:**
-
-```text
-IMPROVEMENT CYCLE: [Q# YYYY]
-ANALYSIS PERIOD: [date range]
-
-SYSTEM HEALTH OVERVIEW:
-- Overall Quality Trend: [Improving/Stable/Declining]
-- Average Agent Score: [0-100]
-- Workflow Effectiveness: [0-100]
-- User Satisfaction: [0-100]
-
-IMPROVEMENT INITIATIVES COMPLETED:
-1. [Initiative]: [Impact measurement]
-2. [Initiative]: [Impact measurement]
-
-CURRENT PRIORITY IMPROVEMENTS:
-1. [Priority 1]: [Timeline] - [Expected ROI]
-2. [Priority 2]: [Timeline] - [Expected ROI]
-3. [Priority 3]: [Timeline] - [Expected ROI]
-
-RESOURCE ALLOCATION:
-- Development effort: [hours/weeks]
-- Testing requirements: [scope]
-- Change management: [activities]
-
-SUCCESS METRICS:
-- Quality improvement targets
-- Performance enhancement goals
-- User experience objectives
-- System reliability standards
-
-NEXT CYCLE PLANNING:
-- Emerging improvement opportunities
-- Resource requirements and constraints
-- Strategic alignment and priorities
+Focus only on issues, skip what's already good.
 ```
 
-Drive systematic, data-driven improvements across the entire agent ecosystem.
+### Step 2: Use Before Committing
 
-## QA Automation Workflows
+Before committing documentation changes:
 
-### Automated Quality Assessment Pipeline
+1. Open the file you're editing
+2. Type `#prompt:quick-quality-check` in Copilot Chat
+3. Fix any issues found
+4. Commit with confidence
 
-Create a prompt file named `qa-assessment-pipeline.prompt.md` in your `.github/prompts/` folder:
+## Part 4: Automated Issue Templates
+
+### Step 1: Create a Content Issue Template
+
+Create `.github/ISSUE_TEMPLATE/content-improvement.yml`:
+
+```yaml
+name: Content Improvement
+description: Suggest improvements to documentation
+labels: ["documentation", "content"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Improvement Type
+      options:
+        - Fix error or outdated information
+        - Clarify confusing content
+        - Add missing information
+        - Improve formatting or structure
+    validations:
+      required: true
+
+  - type: input
+    id: file
+    attributes:
+      label: File Path
+      description: Which file needs improvement?
+      placeholder: docs/getting-started.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Content
+      description: What does it say now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested Change
+      description: What should it say instead?
+    validations:
+      required: true
+```
+
+### Step 2: Create a PR Template
+
+Create `.github/pull_request_template.md`:
 
 ```markdown
----
-description: Automated quality assessment workflow for continuous monitoring
----
+## Summary
 
-**Automated QA Pipeline Execution:**
+Brief description of changes.
 
-**Step 1: Agent Output Collection**
-- Gather recent outputs from all active agents
-- Categorize by agent type and task complexity
-- Prepare sample set for quality evaluation
+## Content Checklist
 
-**Step 2: Automated Quality Scoring**
-Use Output Validator agent to evaluate each agent output using standardized quality metrics
+- [ ] Spelling and grammar checked
+- [ ] Links verified working
+- [ ] Code examples tested
+- [ ] Follows style guide
+- [ ] No placeholder content remaining
 
-**Step 3: Workflow Performance Assessment**  
-Use Workflow Monitor agent to analyze multi-agent workflow effectiveness and coordination
+## Files Changed
 
-**Step 4: Trend Analysis and Reporting**
-Use Improvement Orchestrator agent to identify patterns and improvement opportunities
+- `path/to/file.md` - Description of change
 
-**Step 5: Automated Recommendations**
-- Generate specific improvement recommendations
-- Prioritize by impact and implementation effort  
-- Create action plans for systematic enhancements
+## Testing
 
-**Pipeline Output:**
-- Quality Dashboard (current status)
-- Improvement Roadmap (prioritized actions)
-- Alert System (critical issues requiring immediate attention)
-- Progress Tracking (improvement trend analysis)
-
-Run this pipeline weekly for continuous quality assurance.
+Describe how you verified the changes work correctly.
 ```
 
-### Quality Gate Enforcement
+## Part 5: Quality Dashboard (Manual Tracking)
 
-Create a prompt file named `quality-gate-enforcement.prompt.md` in your `.github/prompts/` folder:
+### Create a Quality Tracking Issue
+
+Since GitHub doesn't have built-in dashboards, use a pinned issue to track quality metrics.
+
+Create an issue titled "📊 Content Quality Tracker" with this template:
 
 ```markdown
+# Content Quality Tracker
+
+**Last Updated:** [Date]
+
+## Quality Metrics
+
+| Metric | Current | Target | Status |
+|--------|---------|--------|--------|
+| Markdown lint errors | 12 | 0 | 🟡 |
+| Broken links | 0 | 0 | 🟢 |
+| Spell check errors | 5 | 0 | 🟡 |
+| Open content issues | 3 | <5 | 🟢 |
+
+## Recent Improvements
+
+- [Date]: Fixed broken links in getting-started.md
+- [Date]: Updated outdated screenshots
+
+## Priority Issues
+
+- [ ] #123 - Fix API documentation
+- [ ] #124 - Update installation guide
+
 ---
-description: Automated quality gates that prevent low-quality outputs from being used
----
-
-**Quality Gate Enforcement Protocol:**
-
-**Pre-Deployment Quality Check:**
-
-**Gate 1: Basic Quality Standards**
-- Minimum completeness threshold (70%)
-- Format compliance verification
-- Basic accuracy validation
-- Professional presentation standards
-
-**Gate 2: Advanced Quality Validation**
-- Context appropriateness assessment
-- Actionability and usefulness scoring
-- Consistency with organizational standards
-- User experience quality evaluation
-
-**Gate 3: Integration Quality Assessment**
-- Workflow coordination effectiveness
-- Cross-agent consistency validation
-- End-to-end quality assurance
-    - Final output comprehensive review
-    
-    **Quality Gate Decision Matrix:**
-    ```
-    QUALITY SCORE >= 90: AUTO-APPROVE (Excellent quality)
-    QUALITY SCORE 80-89: CONDITIONAL-APPROVE (Good, minor improvements suggested)
-    QUALITY SCORE 70-79: REVIEW-REQUIRED (Acceptable, improvements needed)
-    QUALITY SCORE < 70: REJECT (Below standards, requires rework)
-    ```
-    
-    **Enforcement Actions:**
-    - Auto-approve high-quality outputs
-    - Flag medium-quality outputs for review
-    - Block low-quality outputs from use
-    - Provide specific improvement guidance
-    - Track quality trends for system optimization
-    
-    Ensure only high-quality outputs reach end users.
+*Updated weekly by content team*
 ```
 
-## Implementation Steps
+Pin this issue to keep it visible.
 
-### Step 1: Deploy QA Meta-Agents
+## Implementation Checklist
 
-1. **Create all 3 QA agent files** (`output-validator.agent.md`, `workflow-monitor.agent.md`, `improvement-orchestrator.agent.md`) in your `.github/agents/` folder
-2. **Test each agent** with sample outputs
-3. **Validate assessment accuracy** against known quality levels
+Complete these steps to set up your QA automation:
 
-### Step 2: Implement Automated QA Workflows
+### GitHub Actions Setup
 
-1. **Set up QA assessment pipeline** for regular quality monitoring
-2. **Configure quality gates** for output validation
-3. **Test automated workflows** with real agent outputs
+- [ ] Create `.github/workflows/content-qa.yml`
+- [ ] Add `.markdownlint.json` configuration
+- [ ] Add `.cspell.json` with custom words
+- [ ] Verify workflow runs on a test PR
 
-### Step 3: Establish Quality Standards
+### Agent and Prompt Setup
 
-Define quality benchmarks by creating a prompt file named `quality-standards-definition.prompt.md` in your `.github/prompts/` folder:
+- [ ] Create `pr-content-reviewer.agent.md`
+- [ ] Create `quick-quality-check.prompt.md`
+- [ ] Test agent on a real PR
 
-```markdown
----
-description: Establish organizational quality standards for agent outputs
----
+### Templates Setup
 
-**Quality Standards Framework:**
+- [ ] Create issue template for content improvements
+- [ ] Create PR template with quality checklist
+- [ ] Create pinned quality tracking issue
 
-**Minimum Acceptable Standards:**
-- Completeness: 70% (all essential elements included)
-- Accuracy: 80% (factually correct, logically sound)
-- Format: 75% (professional presentation, consistent style)
-- Actionability: 70% (clear next steps, implementable recommendations)
+### Verification
 
-**Target Quality Standards:**
-- Completeness: 85%
-- Accuracy: 90% 
-- Format: 85%
-- Actionability: 80%
-
-**Excellence Standards:**
-- Completeness: 95%
-- Accuracy: 95%
-- Format: 90%
-- Actionability: 90%
-
-Use these standards for consistent quality assessment across all agents.
-```
-
-### Step 4: Monitor and Iterate
-
-1. **Run weekly QA assessments** using automated pipeline
-2. **Track quality trends** over time
-3. **Implement continuous improvements** based on data
-4. **Adjust quality standards** as system matures
+- [ ] Submit a test PR with a markdown error
+- [ ] Confirm the workflow catches the error
+- [ ] Use the PR reviewer agent and verify output
+- [ ] Update quality tracker with current metrics
 
 ## Success Criteria
 
-- [ ] QA meta-agents deployed and validated
-- [ ] Automated quality assessment pipeline operational
-- [ ] Quality gates enforcing standards
-- [ ] Quality trends being tracked and analyzed
-- [ ] Continuous improvement process delivering measurable results
-- [ ] System-wide quality improvements documented
+- [ ] GitHub Actions workflow runs on every PR with markdown changes
+- [ ] Linting catches formatting issues automatically
+- [ ] Link checker prevents broken links from merging
+- [ ] PR template reminds authors to check quality
+- [ ] Quality metrics are tracked and visible
 
 ## Congratulations
 
-You've successfully built a comprehensive agent ecosystem with automated quality assurance. Your system can now:
+You've built a practical QA automation system that:
 
-- **Orchestrate complex workflows** across multiple specialized agents
-- **Monitor and validate quality** automatically
-- **Continuously improve** based on performance data
-- **Enforce quality standards** consistently
-- **Scale effectively** for enterprise use
+- **Automatically checks** markdown quality on every PR
+- **Validates links** before they can break
+- **Catches spelling errors** before they reach production
+- **Provides structured PR reviews** with your agent
+- **Tracks quality metrics** over time
+
+This is real automation that runs without manual intervention and catches issues before they reach your main branch.
 
 ## Next Steps
 
-With your advanced agent arsenal complete, you can now:
+With your automated QA system in place:
 
-1. **Apply these patterns** to other repositories and projects
-2. **Customize agents** for your organization's specific needs
-3. **Share your configuration** with team members
-4. **Continue iterating** based on real-world usage
-5. **Explore integration** with CI/CD pipelines and automation systems
+1. **Monitor the workflow** - Check Actions tab for failures
+2. **Refine lint rules** - Adjust `.markdownlint.json` based on your team's preferences
+3. **Expand the dictionary** - Add project-specific terms to `.cspell.json`
+4. **Review quality trends** - Update your tracking issue weekly
 
 ---
 
-**Achievement Unlocked**: Agent Arsenal Master! You've mastered advanced GitHub Copilot customization and built enterprise-grade automation workflows.
+**Achievement Unlocked**: QA Automation Master! You've built enterprise-grade quality automation using GitHub Actions and Copilot agents.
