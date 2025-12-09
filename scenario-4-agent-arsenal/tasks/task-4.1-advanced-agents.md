@@ -190,43 +190,51 @@ Focus on orchestrating other agents' insights into actionable quality improvemen
 
 Use the same Learn module content with different agents to see their unique perspectives:
 
-```
+```text
 @content-strategist Analyze the overall content strategy for learn-pr/wwl - focusing on the Fabric training module ecosystem
 ```
 
-```
+```text
 @accessibility-auditor Review learn-pr/wwl/get-started-lakehouses for accessibility compliance and inclusive design
 ```
 
-```
+```text
 @technical-validator Verify the accuracy of PySpark code examples in learn-pr/wwl/describe-medallion-architecture/includes/
 ```
 
 ## Step 3: Create Agent Interaction Patterns
 
-Design prompts that coordinate multiple agents:
+Design prompts that coordinate multiple agents. Create a file named `comprehensive-review.prompt.md` in your `.github/prompts/` folder:
 
-```yaml
-comprehensive-review:
-  description: Orchestrate multiple agents for complete content analysis
-  prompt: |
-    Coordinate a comprehensive review using multiple specialist perspectives:
-    
-    **Phase 1 - Strategic Analysis:**
-    @content-strategist: Analyze information architecture and user journey
-    
-    **Phase 2 - Quality Assurance:**
-    @technical-validator: Verify technical accuracy and completeness
-    @accessibility-auditor: Check compliance and inclusive design
-    
-    **Phase 3 - Optimization:**
-    @performance-optimizer: Identify engagement and findability improvements
-    
-    **Phase 4 - Coordination:**
-    @qa-coordinator: Synthesize findings into unified action plan
-    
-    Present consolidated results with prioritized recommendations.
+```markdown
+---
+description: Orchestrate multiple agents for complete content analysis
+---
+
+Coordinate a comprehensive review using multiple specialist perspectives:
+
+**Phase 1 - Strategic Analysis:**
+@content-strategist: Analyze information architecture and user journey
+
+**Phase 2 - Quality Assurance:**
+@technical-validator: Verify technical accuracy and completeness
+@accessibility-auditor: Check compliance and inclusive design
+
+**Phase 3 - Optimization:**
+@performance-optimizer: Identify engagement and findability improvements
+
+**Phase 4 - Coordination:**
+@qa-coordinator: Synthesize findings into unified action plan
+
+Present consolidated results with prioritized recommendations.
 ```
+
+**To use this workflow:**
+
+1. Click **Attach context** (📎) in Copilot Chat
+2. Select **Prompt...** → `comprehensive-review`
+3. Also attach the folder or files you want to analyze
+4. Submit to run the multi-agent analysis
 
 ## Success Criteria
 
