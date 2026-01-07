@@ -1,443 +1,182 @@
-# Part 2: Advanced Copilot Workflows for Enterprise Scale
+# Part 2: Advanced GitHub Copilot Workflows
 
 ## Overview
 
-Welcome to **Part 2** of the GitHub Copilot Repository Management Quest! This 60-minute lab builds on Part 1 fundamentals to tackle advanced workflows, bulk operations, and agent orchestration for enterprise-scale documentation management.
+Welcome to **Part 2** of the GitHub Copilot Repository Management Quest! This session builds on Part 1 fundamentals to tackle **AI-assisted PR reviews** and **advanced agent configuration** for enterprise-scale documentation management.
 
 **Duration:** ~60 minutes  
 **Difficulty:** Intermediate to Advanced  
 **Prerequisites:** Completed Part 1 (or equivalent Copilot experience)
 
-## What You'll Learn
-
-By completing Part 2, you will:
-
-1. **Create advanced custom agents** for specialized documentation workflows
-2. **Triage issues at scale** using AI-powered bulk analysis
-3. **Design agent ecosystems** that work together on complex tasks
-4. **Implement enterprise automation** patterns for sustainable workflows
-
-## Lab Structure
-
-| Module | Duration | Focus |
-|--------|----------|-------|
-| **Recap + Advanced Setup** | 10 min | Review Part 1, add advanced agents |
-| **Scenario 3: Advanced PR Review** | 25 min | Multi-agent pull request review |
-| **Scenario 4: Agent Orchestration** | 20 min | Multi-agent workflows |
-| **Wrap-up** | 5 min | Enterprise application discussion |
-
 ---
 
-## Prerequisites Check
+## Before You Start: Prerequisites Checklist
 
-Before starting Part 2, ensure you have:
+### ✅ Setup from Part 1
 
-- ✅ Completed Part 1 (or have equivalent experience)
-- ✅ `.agents` and `.prompts` files from Part 1 configured
-- ✅ Sample PR created by running "Setup Quest PR" workflow
-- ✅ Repository open in VS Code with Copilot active
+Ensure you have the following from Part 1:
 
-**Need to set up sample PR?**
+| Requirement | How to Verify |
+|-------------|---------------|
+| **Forked repository** | Your fork exists at `github.com/[your-username]/github-repo-management-quest-learn` |
+| **VS Code with Copilot** | GitHub Copilot and Copilot Chat extensions installed and active |
+| **MCP servers configured** | GitHub and Microsoft.docs.mcp servers added in VS Code settings |
+| **Repository cloned locally** | Folder open in VS Code with Copilot active |
+
+### ✅ Sample Content Created
+
+Part 2 requires the **sample PR** created by GitHub Actions:
+
 1. Go to your repository's **Actions** tab on GitHub
-2. Run **"Setup Quest PR"** workflow
-3. Check **Pull requests** tab for the sample PR with `quest-sample` label
+2. Run **"Setup Quest PR"** workflow (if not already done)
+3. Verify: Check **Pull Requests** tab for PR titled `[Quest Sample] Add advanced Copilot data agent content`
+
+> **Don't have the sample PR?** Run the workflow now—it takes about 30 seconds.
 
 ---
 
-## Recap + Advanced Setup (10 minutes)
+## Recap: What You Learned in Part 1
 
-### Quick Review: Part 1 Concepts
+### Module 0: Workspace Preparation
 
-From Part 1, you learned:
-- **@workspace** provides repository-wide context
-- **Custom agents** specialize Copilot for specific tasks
-- **Prompts** create consistent, reusable templates
+| Concept | What You Learned |
+|---------|------------------|
+| **Custom Agents** | Created `.agent.md` files in `.github/agents/` with specialized personas |
+| **Reusable Prompts** | Created `.prompt.md` files in `.github/prompts/` for consistent templates |
+| **Agent Invocation** | Used `@agent-name` in Copilot Chat to activate specialized agents |
+| **Prompt Usage** | Used `#prompt:` to invoke saved prompts |
 
-### Module 0.2-0.4: Advanced Agent Creation
+### Scenario 1: Repository Exploration
 
-Now let's extend your agent toolkit with specialized agents for advanced workflows.
+| Concept | What You Learned |
+|---------|------------------|
+| **@workspace** | Query entire repository for understanding unfamiliar codebases |
+| **Repository Audit** | Use Copilot to analyze structure, find issues, assess quality |
+| **Content Analysis** | Identify patterns, gaps, and improvement opportunities |
 
-#### Add PR Review and Orchestration Agents
+### Scenario 2: Issue Triage
 
-Update your `.agents` file with these advanced agents:
-
-```yaml
-pr-reviewer:
-  description: Specialized agent for comprehensive pull request analysis
-  instructions: |
-    You are a PR review specialist for documentation repositories. Your expertise includes:
-    - Content quality assessment for new and modified files
-    - Cross-reference and link validation
-    - Style guide compliance checking
-    - YAML metadata validation for Microsoft Learn modules
-    
-    When reviewing PRs:
-    1. Summarize the scope and impact of changes
-    2. Identify potential issues (broken links, typos, style violations)
-    3. Check for consistency with existing content
-    4. Validate technical accuracy where possible
-    5. Provide constructive, actionable feedback
-    
-    Always be constructive and prioritize feedback by importance.
-
-link-checker:
-  description: Validates links, includes, and cross-references in documentation
-  instructions: |
-    You are a link validation specialist. Your expertise includes:
-    - Checking relative and absolute link paths
-    - Validating include file references
-    - Identifying broken cross-references
-    - Verifying image and media paths
-    
-    When checking links:
-    1. Identify all link types in the content
-    2. Validate paths exist and are correct
-    3. Flag potential 404 errors
-    4. Suggest corrections for broken links
-    
-    Provide a clear report of valid and invalid links.
-
-workflow-orchestrator:
-  description: Coordinates multi-step workflows and agent collaboration
-  instructions: |
-    You are a workflow orchestration specialist. Your expertise includes:
-    - Breaking complex tasks into coordinated steps
-    - Delegating to specialized agents appropriately
-    - Managing dependencies between tasks
-    - Optimizing for efficiency and quality
-    
-    When orchestrating workflows:
-    1. Identify the overall goal and success criteria
-    2. Break into logical, sequenced steps
-    3. Assign appropriate agents to each step
-    4. Define handoffs and quality gates
-    5. Suggest automation opportunities
-    
-    Create workflows that are efficient, repeatable, and scalable.
-```
-
-#### Add Advanced Prompts
-
-Update your `.prompts` file:
-
-```yaml
-bulk-issue-analysis:
-  description: Analyze multiple issues for patterns and prioritization
-  prompt: |
-    Analyze the provided issues and create a comprehensive triage report:
-    
-    **Categorization:**
-    | Issue | Type | Priority | Effort | Labels |
-    |-------|------|----------|--------|--------|
-    [Populate table for each issue]
-    
-    **Patterns Identified:**
-    - Common themes across issues
-    - Potential root causes
-    - Related issue groups
-    
-    **Recommended Actions:**
-    1. Quick wins (< 1 hour each)
-    2. High-priority items for this week
-    3. Backlog items for later
-    
-    **Duplicates/Relationships:**
-    - List any duplicate or related issues
-
-agent-workflow:
-  description: Design a multi-agent workflow for a complex task
-  prompt: |
-    Design a workflow for the specified task using available agents:
-    
-    **Available Agents:**
-    - documentation-auditor: Content analysis
-    - style-enforcer: Style consistency
-    - link-checker: Link validation
-    - issue-triager: Issue management
-    - template-generator: Template creation
-    
-    **Workflow Design:**
-    1. Step-by-step breakdown
-    2. Agent assignments for each step
-    3. Expected outputs and handoffs
-    4. Quality checkpoints
-    5. Estimated time per step
-    
-    Make the workflow repeatable and efficient.
-```
-
-### Test Your Advanced Agents
-
-```
-@issue-triager Analyze the issues in this repository with the quest-sample label. Categorize and prioritize them.
-```
-
-```
-@workflow-orchestrator Design a workflow for auditing and improving a Microsoft Learn module.
-```
-
-**Full Task Details:** 
-- [module-0-workspace-prep/tasks/task-0.2-custom-agent.md](../module-0-workspace-prep/tasks/task-0.2-custom-agent.md)
-- [module-0-workspace-prep/tasks/task-0.3-prompt-library.md](../module-0-workspace-prep/tasks/task-0.3-prompt-library.md)
-- [module-0-workspace-prep/tasks/task-0.4-optimization.md](../module-0-workspace-prep/tasks/task-0.4-optimization.md)
+| Concept | What You Learned |
+|---------|------------------|
+| **Issue Categorization** | Use Copilot to classify issues by type, priority, effort |
+| **Duplicate Detection** | Identify related or duplicate issues across backlog |
+| **Bulk Analysis** | Process multiple issues efficiently with AI assistance |
 
 ---
 
-## Scenario 3: Advanced PR Review (25 minutes)
+## What You'll Learn in Part 2
 
-### The Story
+Part 2 introduces **native GitHub Copilot features** for PR review and **advanced agent configuration** that goes beyond basics.
 
-A contributor has submitted a large pull request adding new Copilot for Fabric documentation. The PR includes new markdown files, YAML updates, and media files. You need to conduct a thorough, multi-faceted review using your advanced agents.
+### Scenario 3: The Big Merge (30 minutes)
 
-### Task 3.1: Comprehensive PR Analysis (15 min)
+**Challenge:** Review a large PR with 18 changed files, find issues, and provide constructive feedback before the Friday deadline.
 
-Open the sample PR created by the workflow. Use multiple agents for a thorough review:
+| Skill | What You'll Learn |
+|-------|-------------------|
+| **Native Copilot PR Review** | Add Copilot as a reviewer directly on GitHub.com |
+| **Custom Review Instructions** | Configure `.github/copilot-instructions.md` for tailored reviews |
+| **`#pr` Context** | Use VS Code's GitHub Pull Requests extension for deep analysis |
+| **One-Click Fixes** | Apply Copilot's suggested changes instantly |
 
-**Initial Assessment:**
-```
-@pr-reviewer Analyze the pull request that adds Copilot for Fabric content. Summarize:
-1. Scope of changes (files added/modified)
-2. Overall quality assessment
-3. Key areas requiring attention
-4. Potential blockers or concerns
-```
+**Tasks:**
+- Task 3.1: Initial PR Review (15 min) — Use native Copilot review + scope analysis
+- Task 3.2: Detailed Content Review (15 min) — Technical accuracy, links, formatting
 
-**Link Validation:**
-```
-@link-checker Check all links, includes, and cross-references in the PR changes. Identify any broken or potentially problematic links.
-```
+### Scenario 4: The Agent Arsenal (40 minutes)
 
-**Style Review:**
-```
-@style-enforcer Review the new content for Microsoft Learn style guide compliance. Check:
-- Heading hierarchy and formatting
-- Code block usage and language tags
-- Terminology consistency
-- Accessibility requirements (alt text, etc.)
-```
+**Challenge:** Configure advanced agents with enterprise-grade capabilities and external integrations.
 
-**Key Skills:**
-- Multi-agent PR review
-- Systematic validation across dimensions
-- Constructive feedback generation
+| Skill | What You'll Learn |
+|-------|-------------------|
+| **Tool Permissions** | Configure `tools: ["read", "search", "edit"]` to control agent capabilities |
+| **Model Selection** | Use `model: o1` vs `gpt-4o` for different reasoning needs |
+| **Platform Targeting** | Target agents to `vscode` or `github-copilot` platforms |
+| **Structured Output** | Create JSON-formatted outputs for automation and pipelines |
+| **MCP Tools** | Use Microsoft Docs MCP to search and verify against official documentation |
 
-**Full Task Details:** [scenario-3-big-merge/tasks/task-3.1-initial-review.md](../scenario-3-big-merge/tasks/task-3.1-initial-review.md)
-
-### Task 3.2: Generate Review Comments (10 min)
-
-Synthesize findings into actionable feedback:
-
-```
-@workflow-orchestrator Based on the PR review findings, create a prioritized list of review comments. Format as:
-1. Critical issues (must fix before merge)
-2. Important suggestions (should address)
-3. Minor improvements (nice to have)
-4. Positive feedback (what's done well)
-```
-
-**Draft a Review Summary:**
-```
-@pr-reviewer Write a constructive PR review summary that:
-- Acknowledges the contributor's work
-- Highlights key issues to address
-- Provides specific, actionable suggestions
-- Offers to help with complex fixes
-```
-
-**Key Skills:**
-- Synthesizing multi-agent findings
-- Writing constructive feedback
-- Prioritizing review comments
-
-**Full Task Details:** [scenario-3-big-merge/tasks/task-3.2-detailed-review.md](../scenario-3-big-merge/tasks/task-3.2-detailed-review.md)
+**Tasks:**
+- Task 4.1: Advanced Agent Configuration (20 min) — Tools, models, structured output
+- Task 4.2: MCP Tools and External Integrations (20 min) — Docs search, verification workflows
 
 ---
 
-## Scenario 4: Agent Orchestration (20 minutes)
+## Part 2 Lab Structure
 
-### The Story
+| Section | Duration | Focus |
+|---------|----------|-------|
+| **Prerequisites Check** | 5 min | Verify setup, create sample PR if needed |
+| **Scenario 3: The Big Merge** | 30 min | Native Copilot PR review, `#pr` context |
+| **Scenario 4: Agent Arsenal** | 40 min | Advanced configuration, MCP tools |
+| **Wrap-up** | 5 min | Review, Q&A, next steps |
 
-You've mastered individual agents. Now it's time to coordinate them for complex, multi-step workflows that can handle enterprise-scale documentation management.
-
-### Task 4.1: Design Multi-Agent Workflows (10 min)
-
-Create a workflow that uses multiple agents together:
-
-```
-@workflow-orchestrator Design a comprehensive documentation review workflow that:
-1. Audits a Learn module for content quality
-2. Checks all links and references
-3. Reviews for style consistency
-4. Generates an improvement plan with prioritized issues
-
-Use available agents: documentation-auditor, link-checker, style-enforcer, issue-triager
-```
-
-**Execute the Workflow:**
-
-```
-@documentation-auditor Analyze the learn-pr/wwl/get-started-lakehouses module for content quality issues.
-```
-
-Then:
-```
-@link-checker Check all links and includes in the get-started-lakehouses module.
-```
-
-Then:
-```
-@style-enforcer Review the lakehouse module content for style consistency with Microsoft Learn standards.
-```
-
-Finally:
-```
-@issue-triager Based on the findings from the auditor, link-checker, and style-enforcer, create a prioritized improvement plan.
-```
-
-**Key Skills:**
-- Multi-agent coordination
-- Workflow design
-- Result synthesis
-- Quality gates
-
-**Full Task Details:** [scenario-4-agent-arsenal/tasks/task-4.1-advanced-agents.md](../scenario-4-agent-arsenal/tasks/task-4.1-advanced-agents.md)
-
-### Task 4.2: Create Reusable Workflow Patterns (10 min)
-
-Document your workflow as a reusable pattern:
-
-```
-#agent-workflow Create a reusable workflow pattern for "New Module Review" that can be applied to any Microsoft Learn module. Include agent assignments, estimated times, and quality checkpoints.
-```
-
-**Build a Meta-Agent:**
-
-Add to your `.agents` file:
-
-```yaml
-module-reviewer:
-  description: Orchestrates comprehensive module reviews using multiple specialized agents
-  instructions: |
-    You are a module review coordinator. You orchestrate comprehensive reviews by:
-    
-    1. **Content Audit** (documentation-auditor)
-       - Structure and organization
-       - Completeness and accuracy
-       - Learning objectives alignment
-    
-    2. **Technical Validation** (link-checker)
-       - All links functional
-       - Includes resolve correctly
-       - Code samples validated
-    
-    3. **Style Review** (style-enforcer)
-       - Microsoft Learn style guide compliance
-       - Consistent terminology
-       - Accessibility standards
-    
-    4. **Issue Planning** (issue-triager)
-       - Prioritized fix list
-       - Effort estimates
-       - Quick wins identified
-    
-    When coordinating reviews:
-    - Run agents in logical sequence
-    - Synthesize findings into unified report
-    - Prioritize by user impact
-    - Identify automation opportunities
-```
-
-Test it:
-```
-@module-reviewer Coordinate a comprehensive review of the describe-medallion-architecture module.
-```
-
-**Key Skills:**
-- Meta-agent design
-- Workflow automation
-- Enterprise-scale patterns
-
-**Full Task Details:** [scenario-4-agent-arsenal/tasks/task-4.2-agent-orchestration.md](../scenario-4-agent-arsenal/tasks/task-4.2-agent-orchestration.md)
+**Total Time:** ~80 minutes
 
 ---
 
-## Wrap-up (5 minutes)
+## Key Differences: Part 1 vs Part 2
 
-### What You Accomplished
-
-- ✅ Created advanced agents for PR review and workflow orchestration
-- ✅ Performed comprehensive multi-agent PR analysis
-- ✅ Generated constructive review feedback
-- ✅ Built multi-agent workflows for complex tasks
-- ✅ Created reusable workflow patterns for enterprise scale
-
-### Key Takeaways
-
-1. **Agents can specialize and collaborate** - each focuses on what it does best
-2. **Multi-agent reviews are thorough** - catch issues a single pass might miss
-3. **Constructive feedback matters** - AI helps structure comments effectively
-4. **Workflow patterns are reusable** - invest once, benefit repeatedly
-5. **Meta-agents orchestrate complexity** - coordinate without manual intervention
-
-### Enterprise Applications
-
-These patterns apply to:
-- **Large documentation repositories** - scale reviews and maintenance
-- **Team workflows** - standardize processes across contributors
-- **Release management** - coordinate documentation updates
-- **Quality assurance** - automate checks and balances
-- **Onboarding** - help new team members be productive quickly
-
-### Reflection Questions
-
-1. How would you adapt these workflows for your team's specific needs?
-2. What repetitive tasks could be automated with agent workflows?
-3. How could you measure the impact of these automations?
+| Aspect | Part 1 (Fundamentals) | Part 2 (Advanced) |
+|--------|----------------------|-------------------|
+| **Agent Creation** | Basic name/description | Tools, models, targeting, structured output |
+| **Copilot Usage** | @workspace exploration | Native PR review, `#pr` context |
+| **Scope** | Local workspace analysis | External integrations (MCP, Microsoft Docs) |
+| **Output** | Freeform responses | Structured JSON for automation |
+| **Focus** | Understanding repositories | Reviewing PRs, validating accuracy |
 
 ---
 
-## Quest Complete! 🎉
+## Getting Started
 
-You've completed both parts of the GitHub Copilot Repository Management Quest!
+Ready to begin Part 2?
 
-### Your New Skills
-
-| Part 1: Fundamentals | Part 2: Advanced |
-|---------------------|------------------|
-| @workspace exploration | Multi-agent PR review |
-| Basic agents & prompts | Advanced agent design |
-| Content auditing | Workflow orchestration |
-| Issue triage basics | Enterprise automation |
-
-### Continue Learning
-
-- **Experiment** with new agent types for your specific workflows
-- **Share** your agents and prompts with your team
-- **Iterate** on workflows based on real-world usage
-- **Contribute** improvements back to this quest
+1. **Verify prerequisites** using the checklist above
+2. **Start with Scenario 3:** [The Big Merge](../scenario-3-big-merge/README.md)
+3. **Then continue to Scenario 4:** [The Agent Arsenal](../scenario-4-agent-arsenal/README.md)
 
 ---
 
-## Quick Reference
+## Quick Reference: New Features in Part 2
 
-### Essential Commands
+### Native Copilot PR Review
 
-| Command | Purpose |
-|---------|---------|
-| `@pr-reviewer [query]` | Comprehensive PR analysis |
-| `@link-checker [query]` | Validate links and references |
-| `@workflow-orchestrator [query]` | Multi-agent coordination |
-| `#agent-workflow [task]` | Design workflows |
+```text
+On GitHub.com:
+1. Open PR → Reviewers dropdown → Select "Copilot"
+2. Wait ~30 seconds for analysis
+3. Review inline comments on Files Changed tab
+4. Apply suggestions with one click
+```
 
-### Files to Reference
+### Custom Instructions File
 
-- **Module 0 Advanced Tasks:** `module-0-workspace-prep/tasks/task-0.2-0.4`
-- **Scenario 3 Tasks:** `scenario-3-big-merge/tasks/`
-- **Scenario 4 Tasks:** `scenario-4-agent-arsenal/tasks/`
-- **Sample PR:** Check repository Pull requests tab (filter: `quest-sample`)
+Create `.github/copilot-instructions.md`:
 
-### Need Help?
+```markdown
+When performing a code review, apply these checks:
+- Verify YAML frontmatter follows Microsoft Learn schema
+- Check ms.date values are within 12 months
+- Ensure code blocks specify language
+- Flag TODO/TBD placeholder text
+```
 
-- Check solution guides in each scenario's `solutions/` folder
-- Review `resources/copilot-prompts.md` for more examples
-- See `resources/best-practices.md` for tips
+### Agent Tool Configuration
+
+```markdown
+---
+name: Content Auditor
+description: Read-only auditor that cannot modify files
+tools: ["read", "search"]  # No "edit" = safe exploration
+---
+```
+
+### MCP Docs Search
+
+```text
+What are the current best practices for Fabric lakehouses? 
+Search Microsoft Learn for the latest guidance.
+```
+
+---
+
+**Let's begin!** Start with [Scenario 3: The Big Merge](../scenario-3-big-merge/README.md).

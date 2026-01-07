@@ -1,590 +1,326 @@
-# Task 4.2: Custom Instructions & Configuration
+# Task 4.2: MCP Tools and External Integrations
+
+**Duration:** 20 minutes  
+**Difficulty:** Advanced  
+**Prerequisites:** Task 4.1 (Advanced Agent Configuration)
 
 ## Objective
 
-Configure Copilot with repository-specific instructions, path-based rules, and review customization to tailor its behavior without building custom agents.
+Learn to extend agent capabilities using **MCP (Model Context Protocol) tools** - external integrations that let agents query documentation, search code samples, and access external data sources.
 
-## Why Custom Instructions?
+## Background
 
-Custom instructions are the **recommended way** to customize Copilot behavior:
-- ✅ No code to maintain
-- ✅ Works with native Copilot Code Review
-- ✅ Works with Copilot Coding Agent
-- ✅ Applies automatically to all Copilot interactions
-- ✅ Version controlled with your repository
+In Task 4.1, you configured agents with `tools: ["read", "search", "edit"]` for workspace operations. **MCP tools** go further - they connect agents to external services:
 
-## Instruction File Types
-
-| File | Location | Purpose |
-|------|----------|---------|
-| `copilot-instructions.md` | `.github/` | Repository-wide instructions |
-| `*.instructions.md` | `.github/instructions/` | Path-specific instructions |
-| `AGENTS.md` | Any directory | Agent context (nearest file wins) |
-
-## Part 1: Repository-Wide Instructions
-
-### Step 1: Create the Main Instructions File
-
-Create `.github/copilot-instructions.md`:
-
-```markdown
-# Copilot Instructions for Microsoft Learn Content
-
-## Project Overview
-This repository contains Microsoft Learn training modules for Microsoft Fabric.
-Modules are located in `learn-pr/wwl/` and follow the Learn authoring format.
-
-## Repository Structure
-- `learn-pr/wwl/*/` - Individual training modules
-- `learn-pr/wwl/*/includes/` - Module units (content files)
-- `learn-pr/wwl/*/index.yml` - Module metadata and unit definitions
-
-## Build and Validation
-Always run these checks before committing:
-1. `yamllint **/*.yml` - Validate YAML syntax
-2. `markdownlint **/*.md` - Check markdown formatting
-3. Verify all internal links resolve correctly
-
-## Content Standards
-
-### YAML Metadata Requirements
-Every `index.yml` must include:
-- `uid`: Unique identifier matching folder name pattern
-- `title`: Module title (sentence case)
-- `description`: 150-300 character description
-- `ms.date`: Last significant update date (MM/DD/YYYY format)
-- `author`: GitHub username of primary author
-
-### Markdown Formatting
-- Use sentence case for headings (not Title Case)
-- Include alt text for all images
-- Specify language in fenced code blocks (```python, ```sql, ```yaml)
-- Use relative links for internal references
-
-### Code Examples
-- All PySpark code must be valid for Fabric notebooks
-- Include necessary imports at the start of code blocks
-- Add comments explaining non-obvious logic
-- Test code examples before committing
-
-## Code Review Focus
-When reviewing PRs, prioritize:
-1. YAML structure and required fields
-2. ms.date freshness (should be within 12 months)
-3. Broken internal links
-4. Missing alt text on images
-5. Inconsistent terminology
-
-## Terminology
-Always use:
-- "Microsoft Fabric" (not just "Fabric" on first reference)
-- "lakehouse" (lowercase, one word)
-- "PySpark" (not "pyspark" or "Pyspark")
-- "SQL" (uppercase)
-```
-
-### Step 2: Verify Instructions Are Used
-
-1. Make a change to any file in the repository
-2. Open Copilot Chat and ask a question about the repository
-3. Check the **References** section - you should see `copilot-instructions.md` listed
+| Tool Type | Scope | Examples |
+|-----------|-------|----------|
+| Built-in tools | Local workspace | `read`, `search`, `edit`, `run` |
+| **MCP tools** | External services | Documentation APIs, databases, Azure resources |
 
 ---
 
-## Part 2: Path-Specific Instructions
+## What is MCP?
 
-Path-specific instructions apply only when Copilot is working on matching files.
+**Model Context Protocol (MCP)** is an open standard that lets AI assistants connect to external data sources and tools. When MCP servers are configured:
 
-### Step 1: Create YAML-Specific Instructions
+- Agents can **search official documentation** in real-time
+- Agents can **fetch current code samples** from Microsoft Learn
+- Agents can **query Azure resources** you have access to
+- Results are always **up-to-date** (not from training data)
 
-Create `.github/instructions/yaml-modules.instructions.md`:
+---
+
+## Step 1: Discover Available MCP Tools
+
+In VS Code with GitHub Copilot, MCP tools are automatically available when extensions provide them. The **Azure extension** and **GitHub Copilot** provide several MCP servers.
+
+### Microsoft Docs MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `microsoft_docs_search` | Search Microsoft Learn for relevant articles |
+| `microsoft_docs_fetch` | Get full content of a specific docs page |
+| `microsoft_code_sample_search` | Find official code examples by language |
+
+### Try It: Search Microsoft Docs
+
+In Copilot Chat, ask a question that requires current documentation:
+
+```text
+What are the current best practices for creating Fabric lakehouses? Search Microsoft Learn for the latest guidance.
+```
+
+Copilot will use the Docs MCP tool to search Microsoft Learn and return current information.
+
+### Try It: Find Code Samples
+
+```text
+Find official Microsoft code samples for PySpark in Fabric notebooks. Show me examples of reading from a lakehouse.
+```
+
+Copilot searches the official docs and returns real, tested code samples.
+
+---
+
+## Step 2: Create Agents That Use MCP Tools
+
+You can create agents that specifically leverage MCP tools for their expertise.
+
+### Exercise: Documentation Research Agent
+
+Create `.github/agents/docs-researcher.agent.md`:
 
 ```markdown
 ---
-applyTo: "**/index.yml,**/*.yml"
+name: Docs Researcher
+description: Researches official Microsoft documentation to answer questions with authoritative sources
+tools: ["read", "search", "mcp"]
 ---
 
-# YAML File Instructions
+You are a documentation research specialist with access to Microsoft Learn.
 
-## Required Fields for index.yml
-Every module index.yml must have:
-```yaml
-### YamlMime:Module
-uid: learn.wwl.[module-name]
-title: [Module Title]
-description: [150-300 characters]
-ms.date: [MM/DD/YYYY]
-author: [github-username]
-ms.author: [microsoft-alias]
-ms.topic: module
+**Your workflow:**
+1. When asked a technical question, FIRST search Microsoft Learn for current guidance
+2. Cite specific documentation URLs for every claim
+3. Quote relevant sections directly
+4. Flag if documentation is outdated or conflicts with other sources
+
+**Always provide:**
+- Direct links to source documentation
+- Publication/update dates when visible
+- Confidence level based on source authority
+
+**Never:**
+- Make claims without documentation backing
+- Use training data when current docs are available
+- Guess at API syntax or parameters
+
+If documentation is unclear or missing, say so explicitly.
 ```
 
-## Unit References
-When adding units, ensure:
-- Unit files exist in the `includes/` folder
-- Unit UIDs follow pattern: `learn.wwl.[module-name].[unit-name]`
-- Unit order matches intended learning progression
+### Exercise: Code Sample Validator
 
-## Common YAML Errors to Avoid
-- Missing quotes around strings with colons
-- Incorrect indentation (use 2 spaces)
-- Trailing whitespace
-- Duplicate keys
-```
-
-### Step 2: Create Markdown-Specific Instructions
-
-Create `.github/instructions/markdown-content.instructions.md`:
+Create `.github/agents/code-validator.agent.md`:
 
 ```markdown
 ---
-applyTo: "**/*.md"
+name: Code Validator
+description: Validates code examples against official Microsoft samples and documentation
+tools: ["read", "search", "mcp"]
 ---
 
-# Markdown Content Instructions
+You are a code validation specialist with access to official Microsoft code samples.
 
-## Heading Structure
-- Use only one H1 (`#`) per file - the title
-- Follow sequential heading levels: H1 → H2 → H3 (no skipping)
-- Use sentence case for headings
+**Validation workflow:**
+1. When shown code, search for similar official examples
+2. Compare the provided code against official samples
+3. Identify discrepancies in syntax, APIs, or patterns
+4. Suggest corrections based on official guidance
 
-## Code Blocks
-Always specify the language:
-```python
-# Python/PySpark code
-```
-```sql
--- SQL queries
-```
-```yaml
-# YAML configuration
-```
+**For each code block you validate, report:**
+- ✅ Matches official patterns (with source link)
+- ⚠️ Minor differences (explain what's different)
+- ❌ Incorrect usage (show official alternative)
 
-## Links
-- Use relative paths for internal links: `[text](../other-module/file.md)`
-- Use descriptive link text (not "click here")
-- Verify links resolve before committing
+**Languages you specialize in:**
+- Python/PySpark for Fabric
+- SQL/KQL for Fabric
+- YAML for Learn modules
+- PowerShell for Azure
 
-## Images
-- Include alt text: `![Descriptive alt text](path/to/image.png)`
-- Store images in module's `media/` folder
-- Use PNG or SVG for diagrams, JPG for photos
-
-## Lists
-- Use `-` for unordered lists
-- Use `1.` for ordered lists (auto-numbered)
-- Indent nested items with 2 spaces
+Always prefer official Microsoft samples over general coding patterns.
 ```
 
-### Step 3: Create PySpark-Specific Instructions
-
-Create `.github/instructions/pyspark-code.instructions.md`:
-
-```markdown
----
-applyTo: "**/includes/*.md"
-excludeAgent: "code-review"
 ---
 
-# PySpark Code Example Instructions
+## Step 3: Test MCP-Enabled Agents
 
-These instructions apply when Copilot Coding Agent works on unit files.
+### Test the Docs Researcher
 
-## PySpark Best Practices for Fabric
-When generating PySpark code examples:
-
-```python
-# Always include necessary imports
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, lit
-
-# Get the Spark session (Fabric provides this automatically)
-spark = SparkSession.builder.getOrCreate()
+```text
+@docs-researcher What's the correct YAML schema for Microsoft Learn module index.yml files? Find the official documentation.
 ```
 
-## Common Patterns
+The agent should search Microsoft Learn and return authoritative schema documentation with links.
 
-### Reading from Lakehouse
-```python
+### Test the Code Validator
+
+```text
+@code-validator Validate this PySpark code for reading from a Fabric lakehouse:
+
 df = spark.read.format("delta").load("Tables/my_table")
+
+Is this the recommended pattern? Find official examples.
 ```
 
-### Writing to Lakehouse
-```python
-df.write.format("delta").mode("overwrite").save("Tables/output_table")
+The agent should search for official Fabric PySpark samples and compare.
+
+---
+
+## Step 4: Build a Documentation Accuracy Workflow
+
+Combine your MCP-enabled agents with workspace agents for a complete workflow.
+
+### Exercise: Create Accuracy Check Prompt
+
+Create `.github/prompts/verify-against-docs.prompt.md`:
+
+```markdown
+---
+description: Verify Learn module content against current Microsoft documentation
+---
+
+Verify the accuracy of Learn module content against official Microsoft documentation:
+
+**Step 1: Extract Claims**
+Identify all technical claims, code examples, and procedural steps in the content.
+
+**Step 2: Search Current Documentation**
+For each claim, search Microsoft Learn for current guidance:
+- API references and syntax
+- Best practices and recommendations
+- Version-specific information
+
+**Step 3: Compare and Report**
+For each item, report:
+
+| Content Claim | Current Docs Say | Status | Source |
+|---------------|------------------|--------|--------|
+| [claim from content] | [what docs say] | ✅/⚠️/❌ | [URL] |
+
+**Step 4: Recommendations**
+- Items that need updating
+- New information to add
+- Deprecated content to remove
+
+Focus on technical accuracy, not style or formatting.
 ```
 
-## Error Handling
-Always show error handling for production code:
-```python
-try:
-    result = df.collect()
-except Exception as e:
-    print(f"Error: {e}")
-```
+### Test the Accuracy Workflow
+
+```text
+#prompt:verify-against-docs
+
+Verify the technical accuracy of learn-pr/wwl/get-started-lakehouses/includes/2-explore-lakehouse.md against current Microsoft Fabric documentation.
 ```
 
 ---
 
-## Part 3: Agent Context Files (AGENTS.md)
+## Step 5: Understand MCP Tool Limitations
 
-For more complex projects, use `AGENTS.md` files to provide directory-specific context.
+MCP tools are powerful but have constraints:
 
-### Step 1: Create Root AGENTS.md
+| Capability | Limitation |
+|------------|------------|
+| Search docs | Results limited to ~10 chunks |
+| Fetch pages | One page at a time |
+| Code samples | May not cover all scenarios |
+| Real-time | Requires network connectivity |
 
-Create `AGENTS.md` in the repository root:
+### Best Practices for MCP Tools
 
-```markdown
-# Agent Instructions
-
-This repository contains Microsoft Learn training content for Microsoft Fabric.
-
-## Key Directories
-- `learn-pr/wwl/` - All training modules
-- `.github/` - Configuration and workflows
-- `media/` - Shared images and diagrams
-
-## Working with This Repository
-
-### Before Making Changes
-1. Read the relevant module's README if it exists
-2. Check the `index.yml` for module structure
-3. Verify ms.date is updated when changing content
-
-### After Making Changes
-1. Run linting checks
-2. Verify all links work
-3. Update ms.date if content significantly changed
-```
-
-### Step 2: Create Module-Specific AGENTS.md
-
-Create `learn-pr/wwl/AGENTS.md`:
-
-```markdown
-# Learn Module Instructions
-
-Each subdirectory is a complete Microsoft Learn module.
-
-## Module Structure
-```
-module-name/
-├── index.yml          # Module metadata and unit list
-├── includes/          # Unit content files
-│   ├── 1-introduction.md
-│   ├── 2-main-content.md
-│   └── n-summary.md
-├── media/             # Module images
-└── knowledge-check.yml # Quiz questions (optional)
-```
-
-## Common Tasks
-
-### Adding a New Unit
-1. Create the markdown file in `includes/`
-2. Add the unit reference to `index.yml`
-3. Update the module description if needed
-4. Update `ms.date`
-
-### Updating Existing Content
-1. Make content changes
-2. Update `ms.date` in `index.yml`
-3. Verify cross-references still work
-```
+1. **Be specific in queries** - "Fabric lakehouse PySpark read" > "how to read data"
+2. **Verify with fetch** - Search finds pages; fetch gets full content
+3. **Combine with local tools** - Use MCP for verification, local tools for editing
+4. **Cache important findings** - Save key docs locally for offline work
 
 ---
 
-## Part 4: Testing Your Configuration
+## Step 6: Create a Hybrid Workflow Agent
 
-### Test 1: Copilot Code Review with Custom Instructions
+Build an agent that combines local and MCP capabilities.
 
-1. Create a PR with intentional issues
-2. Add Copilot as a reviewer
-3. Verify Copilot references your custom instructions in its feedback
+### Exercise: Learn Module Auditor with Docs Verification
 
-### Test 2: Copilot Coding Agent with Instructions
+Create `.github/agents/verified-auditor.agent.md`:
 
-1. Create an issue: "Add a new unit about data transformation"
-2. Assign to Copilot
-3. Verify the PR follows your custom instructions
+```markdown
+---
+name: Verified Auditor
+description: Audits Learn modules and verifies technical content against current Microsoft documentation
+tools: ["read", "search", "mcp"]
+model: gpt-4o
+---
 
-### Test 3: Path-Specific Instructions
+You are a Learn module auditor with access to both local files and Microsoft documentation.
 
-1. Ask Copilot Chat about a YAML file
-2. Verify it applies YAML-specific guidance
-3. Ask about a Markdown file
-4. Verify it applies Markdown-specific guidance
+**Audit workflow:**
+
+1. **Local Analysis** (using read/search)
+   - Scan module structure and files
+   - Extract all technical claims and code examples
+   - Check formatting and link integrity
+
+2. **Documentation Verification** (using MCP)
+   - Search Microsoft Learn for current guidance on each topic
+   - Compare module content against official documentation
+   - Identify outdated or incorrect information
+
+3. **Synthesis**
+   - Combine local findings with documentation verification
+   - Prioritize issues by accuracy impact
+   - Provide specific fix recommendations with doc links
+
+**Output format:**
+```json
+{
+  "module": "module-name",
+  "verification_date": "YYYY-MM-DD",
+  "accuracy_score": 85,
+  "verified_against": ["list of doc URLs checked"],
+  "issues": [
+    {
+      "file": "path",
+      "line": 42,
+      "claim": "what the content says",
+      "current_docs": "what official docs say",
+      "source_url": "https://learn.microsoft.com/...",
+      "severity": "critical|major|minor",
+      "fix": "recommended correction"
+    }
+  ]
+}
+```
+
+Always cite documentation sources for accuracy claims.
+```
+
+### Test the Verified Auditor
+
+```text
+@verified-auditor Audit learn-pr/wwl/get-started-lakehouses for technical accuracy. Verify all Fabric-related claims against current Microsoft documentation.
+```
 
 ---
 
 ## Success Criteria
 
-- [ ] Repository-wide instructions created (`.github/copilot-instructions.md`)
-- [ ] Path-specific instructions for YAML files
-- [ ] Path-specific instructions for Markdown files
-- [ ] Instructions verified in Copilot Chat references
-- [ ] Copilot Code Review uses custom instructions
-- [ ] (Optional) AGENTS.md files for directory context
+- [ ] Understood how MCP tools extend agent capabilities
+- [ ] Created agents that use `mcp` in their tools list
+- [ ] Successfully queried Microsoft Learn documentation via Copilot
+- [ ] Found and used official code samples
+- [ ] Built a hybrid workflow combining local + MCP tools
+- [ ] Created structured output for documentation verification
 
-## Next Steps
-
-Ready to build custom agents for specialized workflows? Continue to [Task 4.3: Advanced Custom Agents](task-4.3-performance-optimization.md)
-
-```markdown
----
-description: Comprehensive workflow for validating content before publication
 ---
 
-Execute a complete content publication validation workflow:
+## Key Takeaways
 
-**Stage 1: Strategic Review**
-@content-strategist: Evaluate content alignment with:
-- Overall content strategy and user journey
-- Information architecture and taxonomy
-- Audience needs and business objectives
+| Concept | Application |
+|---------|-------------|
+| **MCP tools** | Connect agents to external data sources |
+| **Docs search** | Get current, authoritative information |
+| **Code samples** | Find official, tested examples |
+| **Hybrid workflows** | Combine local analysis with external verification |
+| **Citation** | Always link to source documentation |
 
-**Stage 2: Technical Validation**
-@technical-validator: Verify:
-- Technical accuracy and completeness
-- Code examples and implementation details
-- Cross-references and link validity
-
-**Stage 3: Accessibility Compliance**
-@accessibility-auditor: Assess:
-- WCAG 2.1 AA compliance status
-- Inclusive design implementation
-- Multi-modal accessibility support
-
-**Stage 4: Performance Optimization**
-@performance-optimizer: Analyze:
-- Content discoverability and SEO factors
-- User engagement optimization opportunities
-- Conversion path effectiveness
-
-**Stage 5: Quality Coordination**
-@qa-coordinator: Synthesize findings and create:
-- Publication readiness assessment (Go/No-Go decision)
-- Priority issue resolution plan
-- Success metrics for post-publication monitoring
-
-**Final Output:**
-- Publication Decision: [APPROVED/NEEDS REVISION/BLOCKED]
-- Critical Issues: [Must-fix items before publication]
-- Enhancement Opportunities: [Optional improvements]
-- Monitoring Plan: [Post-publication success tracking]
-```
-
-### Test the Publication Pipeline
-
-Run this workflow on sample content by attaching the prompt file:
-
-1. Open Copilot Chat
-2. Type `#prompt:` and select `content-publication-pipeline`
-3. Add your query: `@workspace Evaluate scenario-1-inheritance/challenge-repo/docs/getting-started.md for publication readiness`
-
-## Workflow 2: Repository Health Assessment
-
-Create a file named `repository-health-check.prompt.md` in your `.github/prompts/` folder:
-
-```markdown
----
-description: Comprehensive repository analysis using parallel agent assessment
 ---
 
-Conduct a complete repository health assessment using parallel analysis:
+## What's Next?
 
-**Parallel Assessment Phase:**
+MCP capabilities extend beyond documentation. Other available MCP servers include:
+- **Azure Resource Graph** - Query your Azure resources
+- **GitHub** - Search issues, PRs, code across repos
+- **Container tools** - Manage Docker containers
 
-**Track A - Content Strategy Analysis:**
-@content-strategist: Evaluate repository-wide:
-- Content architecture and organization
-- User journey completeness and effectiveness
-- Content gap analysis and strategic opportunities
-
-**Track B - Technical Quality Assessment:**
-@technical-validator: Assess across all content:
-- Technical accuracy and currency
-- Code example quality and completeness
-- Cross-reference integrity and maintenance needs
-
-**Track C - Accessibility Compliance Review:**
-@accessibility-auditor: Audit for:
-- Universal design principles implementation
-- Compliance gaps and risk assessment
-- Inclusive content recommendations
-
-**Track D - Performance Analysis:**
-@performance-optimizer: Analyze:
-- Content discoverability and search optimization
-- User engagement patterns and opportunities
-- Performance benchmarks and improvement potential
-
-**Synthesis Phase:**
-@qa-coordinator: Create integrated health report:
-- Overall Health Score (1-100 with breakdown by category)
-- Critical Issues Matrix (impact vs. effort to fix)
-- Strategic Improvement Roadmap (6-month plan)
-- Resource Allocation Recommendations
-- Success Metrics and Monitoring Strategy
-
-**Executive Summary Format:**
-- Repository Health Status: [EXCELLENT/GOOD/NEEDS ATTENTION/CRITICAL]
-- Top 3 Strategic Priorities
-- Resource Requirements
-- Timeline for Improvements
-```
-
-### Test the Health Assessment
-
-1. Open Copilot Chat
-2. Type `#prompt:` and select `repository-health-check`
-3. Add: `@workspace Conduct a complete health assessment of this repository`
-
-## Workflow 3: Issue Resolution Workflow
-
-Create a file named `issue-resolution-workflow.prompt.md` in your `.github/prompts/` folder:
-
-```markdown
----
-description: Smart triage and resolution planning for repository issues using conditional agent routing
----
-
-Execute intelligent issue resolution workflow with conditional routing:
-
-**Phase 1: Initial Triage**
-@qa-coordinator: Analyze the issue and determine routing:
-- Issue type classification (content, technical, accessibility, strategic)
-- Severity assessment (critical, high, medium, low)
-- Complexity evaluation (simple, moderate, complex)
-- Stakeholder impact analysis
-
-**Phase 2: Conditional Specialist Routing**
-
-**IF Content Strategy Issue:**
-@content-strategist: Develop strategic resolution approach
-
-**IF Technical Accuracy Issue:**
-@technical-validator: Create technical resolution plan
-
-**IF Accessibility Issue:**
-@accessibility-auditor: Design compliance resolution strategy
-
-**IF Performance Issue:**
-@performance-optimizer: Optimize for better user outcomes
-
-**Phase 3: Cross-Impact Analysis**
-@qa-coordinator: Assess resolution impact on:
-- Related content and dependencies
-- User experience and journey flows
-- Technical system requirements
-- Resource and timeline implications
-
-**Phase 4: Resolution Planning**
-Create comprehensive resolution plan:
-- Implementation Strategy (step-by-step approach)
-- Resource Requirements (time, skills, tools)
-- Risk Assessment (potential complications)
-- Success Criteria (measurable outcomes)
-- Timeline (realistic milestones)
-
-**Output Format:**
-- Resolution Recommendation: [IMPLEMENT/DEFER/ESCALATE/CLOSE]
-- Implementation Plan: [Detailed action steps]
-- Success Metrics: [How to measure resolution success]
-- Follow-up Actions: [Monitoring and validation steps]
-```
-
-### Test Issue Resolution Workflow
-
-Use with actual repository issues:
-
-1. Open Copilot Chat
-2. Attach the `issue-resolution-workflow` prompt
-3. Add: `Analyze and create resolution plan for: [paste issue description or URL]`
-
-## Advanced Orchestration Techniques
-
-### 1. Agent Handoff Patterns
-
-Create a prompt file named `agent-handoff-demo.prompt.md` in your `.github/prompts/` folder that explicitly passes context between agents:
-
-```markdown
----
-description: Demonstrate explicit context passing between agents
----
-
-**Agent Handoff Workflow Example:**
-
-**Step 1**: @content-strategist
-Analyze content strategy and create strategic context for technical review.
-Pass to technical validator: [Strategic priorities and user journey context]
-
-**Step 2**: @technical-validator
-Using strategic context from Step 1, validate technical accuracy.
-Pass to accessibility auditor: [Technical findings and strategic context]
-
-**Step 3**: @accessibility-auditor
-Using context from Steps 1-2, assess accessibility compliance.
-Pass to performance optimizer: [Combined strategic, technical, and accessibility insights]
-
-**Step 4**: @performance-optimizer
-Using all previous context, optimize for performance.
-Pass to QA coordinator: [Complete analysis with all specialist inputs]
-
-**Step 5**: @qa-coordinator
-Synthesize all specialist inputs into unified action plan.
-```
-
-### 2. Feedback Loop Integration
-
-Create a prompt file named `iterative-improvement-cycle.prompt.md` in your `.github/prompts/` folder:
-
-```markdown
----
-description: Workflow with built-in feedback loops and continuous improvement
----
-
-**Iterative Improvement Workflow:**
-
-**Cycle 1: Initial Analysis**
-@qa-coordinator: Run complete assessment and identify top 3 improvement opportunities:
-- Synthesize findings from all specialist perspectives
-- Prioritize issues by impact and effort
-- Recommend highest-priority fixes
-
-**Cycle 2: Validation and Refinement**
-@technical-validator: Re-analyze improved content:
-- Verify fixes were implemented correctly
-- Measure improvement effectiveness
-- Identify any regressions or new issues
-
-@content-strategist: Evaluate strategic impact:
-- Assess alignment with content goals
-- Identify next iteration opportunities
-- Update content roadmap as needed
-
-**Cycle 3: Optimization and Scaling**
-@performance-optimizer: Apply successful patterns:
-- Document what worked and why
-- Identify similar content for improvement
-- Create templates for repeatable fixes
-
-@qa-coordinator: Plan next improvement cycle:
-- Summarize lessons learned
-- Update quality standards based on findings
-- Schedule next review cycle
-
-**Output:** Improvement cycle report with metrics, patterns, and next steps.
-```
-
-## Success Criteria
-
-- [ ] 3 complex workflow prompt files created in `.github/prompts/`
-- [ ] Sequential, parallel, and conditional patterns demonstrated
-- [ ] Agent handoff patterns working effectively
-- [ ] Workflows produce actionable, integrated outputs
-- [ ] Feedback loops and iteration cycles established
-
-## Next Steps
-
-Ready to optimize performance? Continue to [Task 4.3: Performance Optimization](task-4.3-performance-optimization.md)
+You've completed Scenario 4! Return to the [Scenario 4 README](../README.md) or explore the other scenarios.

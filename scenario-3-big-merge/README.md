@@ -24,7 +24,7 @@ Your manager messages you:
 
 ## Scenario Overview
 
-**Duration:** 45-60 minutes
+**Duration:** 30 minutes
 **Difficulty:** Intermediate
 **Focus:** AI-assisted PR review and collaborative feedback
 
@@ -88,7 +88,7 @@ Use **GitHub Copilot's native PR review** as your starting point, then perform d
 - Are the changes appropriately scoped?
 - What areas need detailed review?
 
-### Task 3.2: Detailed Content Review (20 minutes)
+### Task 3.2: Detailed Content Review (15 minutes)
 
 **File:** [tasks/task-3.2-detailed-review.md](tasks/task-3.2-detailed-review.md)
 
@@ -98,30 +98,8 @@ Conduct a detailed review focusing on:
 - Style consistency with Microsoft Learn standards
 - YAML metadata formatting
 - Code example validation
-- Completeness of explanations
-
-### Task 3.3: Cross-Reference Validation (10 minutes)
-
-**File:** [tasks/task-3.3-feedback-generation.md](tasks/task-3.3-feedback-generation.md)
-
-Ensure all links, references, and navigation changes work correctly:
-
-- Internal links point to correct module locations
-- Removed units don't have orphaned links
-- New content is properly linked from existing modules
-- Prerequisites and related modules are updated
-
-### Task 3.4: Constructive Feedback (15 minutes)
-
-**File:** [tasks/task-3.4-final-validation.md](tasks/task-3.4-final-validation.md)
-
-Write a comprehensive PR review with:
-
-- Summary of overall assessment
-- Specific issues organized by priority
-- Constructive suggestions for improvement
-- Positive feedback on what's done well
-- Clear next steps for the contributor
+- Cross-references and link validation
+- Constructive feedback for the contributor
 
 ---
 

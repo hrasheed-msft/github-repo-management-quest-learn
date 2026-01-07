@@ -1,440 +1,392 @@
-# Task 4.1: Native Agent Features
+# Task 4.1: Advanced Agent Configuration
+
+**Duration:** 20 minutes  
+**Difficulty:** Advanced  
+**Prerequisites:** Module 0 (agent basics), familiarity with `.agent.md` file structure
 
 ## Objective
 
-Learn to use GitHub's **built-in Copilot agent capabilities** before building custom solutions. Native features are more reliable, require less maintenance, and integrate seamlessly with GitHub workflows.
+Master advanced agent configuration options: **tool permissions**, **model selection**, **target platforms**, and **structured outputs** that enable more powerful and reliable agent behavior.
 
-## Native Features First Approach
+## Background
 
-| Feature | Description | Priority |
-|---------|-------------|----------|
-| **Copilot Coding Agent** | Assign issues to Copilot; it creates PRs | 1️⃣ Use First |
-| **Copilot Code Review** | Add Copilot as a PR reviewer | 1️⃣ Use First |
-| **Custom Instructions** | Configure via `.github/copilot-instructions.md` | 2️⃣ Configure |
-| **Path-Specific Instructions** | Target file types in `.github/instructions/` | 2️⃣ Configure |
-| **Custom Agents** | Build custom `.agent.md` files | 3️⃣ Only When Needed |
+In Module 0, you created basic agents with a name, description, and instructions. Now you'll learn the advanced YAML properties that control **what agents can do**, **how they think**, and **where they run**.
 
-## Part 1: Using Copilot Coding Agent
+## Advanced YAML Properties
 
-### What is Copilot Coding Agent?
-
-Copilot Coding Agent can work independently to complete tasks, just like a human developer:
-- Fix bugs
-- Implement incremental new features
-- Improve test coverage
-- Update documentation
-- Address technical debt
-
-### Step 1: Assign an Issue to Copilot
-
-1. **Create or find an issue** in your repository
-2. Click the **Assignees** dropdown
-3. Select **Copilot** as the assignee
-4. Copilot will:
-   - Analyze the issue description
-   - Create a new branch (`copilot/...`)
-   - Make the required changes
-   - Open a PR and request your review
-
-**Example issue to try:**
-```markdown
-Title: Add ms.date freshness check documentation
-
-Body:
-Add a section to the README explaining how to check ms.date values in Learn modules.
-Include a list of commands or scripts that can be used to find outdated content.
-```
-
-### Step 2: Review Copilot's PR
-
-When Copilot finishes, it requests your review:
-- Review the changes like you would for any contributor
-- Leave comments with `@copilot` to ask for modifications
-- Copilot will iterate based on your feedback
-- Approve and merge when satisfied
-
-### Step 3: Alternative Ways to Invoke Copilot Coding Agent
-
-**From VS Code:**
-```
-Ask Copilot to create a PR that [describes the task]
-```
-
-**From Copilot Chat on GitHub.com:**
-1. Go to github.com/copilot
-2. Select your repository
-3. Describe the task you want completed
-
-**From an existing PR:**
-- Comment `@copilot` with instructions
-- Copilot will make changes to the existing PR
+| Property | Purpose | Example Values |
+|----------|---------|----------------|
+| `tools` | What actions the agent can perform | `["read", "search", "edit", "run"]` |
+| `model` | Which AI model to use (VS Code only) | `gpt-4o`, `claude-sonnet-4-20250514`, `o1` |
+| `target` | Where the agent is available | `vscode`, `github-copilot` |
 
 ---
 
-## Part 2: Using Native Copilot Code Review
+## Step 1: Configure Tool Permissions
 
-### Step 1: Request a Review from Copilot
+Tools control what your agent can actually **do** in the workspace. Without tools, agents can only chat.
 
-1. Open any PR in your repository
-2. Click the **Reviewers** gear icon
-3. Select **Copilot**
-4. Wait ~30 seconds for analysis
+### Available Tools
 
-### Step 2: Review Copilot's Feedback
+| Tool | Capability | Use Case |
+|------|------------|----------|
+| `read` | Read files in workspace | Analysis, review, auditing |
+| `search` | Search across files | Finding patterns, references |
+| `edit` | Modify files | Automated fixes, refactoring |
+| `run` | Execute terminal commands | Build, test, deploy tasks |
+| `mcp` | Use MCP server tools | External integrations |
 
-Copilot provides:
-- Inline comments on potential issues
-- Suggested fixes you can apply with one click
-- Explanations of why changes are recommended
+### Exercise: Create a Read-Only Auditor
 
-**Key behaviors:**
-- Copilot leaves "Comment" reviews (not Approve/Request Changes)
-- Comments behave like human comments (react, reply, resolve)
-- Re-request review after making changes
-
-### Step 3: Configure Automatic Reviews
-
-For automatic Copilot reviews on all PRs:
-1. Go to **Settings > Copilot > Code review**
-2. Enable automatic reviews
-3. Configure which file patterns trigger reviews
-
----
-
-## Part 3: Custom Instructions (The Right Way)
-
-Instead of building custom agents, configure Copilot's behavior with instructions files.
-
-### Repository-Wide Instructions
-
-Create `.github/copilot-instructions.md`:
-
-```markdown
-# Repository Instructions for Copilot
-
-## Project Overview
-This repository contains Microsoft Learn training modules for Microsoft Fabric.
-
-## Build and Test
-- Validate YAML with `yamllint` before committing
-- Check markdown with `markdownlint`
-- Verify links with the link-checker workflow
-
-## Code Review Guidelines
-When performing code reviews:
-- Verify YAML frontmatter follows Microsoft Learn schema
-- Check ms.date values are within the last 12 months
-- Ensure internal links use relative paths
-- Verify code blocks specify language (python, sql, yaml)
-- Check for consistent terminology (Microsoft Fabric, not Fabric)
-
-## Content Standards
-- Use sentence case for headings
-- Include alt text for all images
-- Wrap code examples in proper fenced blocks
-- Follow accessibility guidelines (WCAG 2.1 AA)
-```
-
-### Path-Specific Instructions
-
-Create `.github/instructions/yaml-content.instructions.md`:
+Create `.github/agents/content-auditor.agent.md`:
 
 ```markdown
 ---
-applyTo: "**/*.yml,**/*.yaml"
+name: Content Auditor
+description: Analyzes Learn modules for quality issues without making changes
+tools: ["read", "search"]
 ---
 
-When working with YAML files in this repository:
-- Validate required fields: title, description, ms.date, author
-- Ensure ms.date format is MM/DD/YYYY
-- Check that unit references match existing file names
-- Verify module UIDs follow the naming convention
+You are a read-only content auditor. You can analyze and search files but CANNOT modify them.
+
+Your audit checklist:
+1. Check ms.date freshness (flag if > 12 months old)
+2. Find broken internal links
+3. Identify code blocks without language specifiers
+4. Flag TODO/FIXME markers
+
+Always output findings in this format:
+- **File**: [path]
+- **Issue**: [description]
+- **Severity**: Critical | Major | Minor
+- **Line**: [number if applicable]
 ```
 
-Create `.github/instructions/markdown-docs.instructions.md`:
+### Exercise: Create an Auto-Fix Agent
+
+Create `.github/agents/auto-fixer.agent.md`:
 
 ```markdown
 ---
-applyTo: "**/*.md"
+name: Auto Fixer
+description: Automatically fixes common documentation issues
+tools: ["read", "search", "edit"]
 ---
 
-When working with Markdown documentation:
-- Use heading levels sequentially (H1 → H2 → H3)
-- Include alt text for images: `![descriptive alt text](path)`
-- Use fenced code blocks with language specifiers
-- Check for broken internal links
-- Ensure consistent terminology per the style guide
+You are an automated fixer with permission to edit files. Only fix issues that are:
+- Clearly wrong (typos, broken syntax)
+- Safe to change (formatting, not content meaning)
+- Reversible (user can undo via git)
+
+Before editing, always:
+1. Explain what you'll change and why
+2. Show the before/after diff
+3. Wait for user confirmation unless they say "auto-fix all"
+
+Never change:
+- Technical content meaning
+- Code logic
+- API endpoints or parameters
 ```
 
----
+### Test Tool Differences
 
-## Part 4: When to Build Custom Agents
-
-Only create custom `.agent.md` files when native features don't meet your needs:
-
-**Good reasons for custom agents:**
-- You need a specialized persona with deep domain expertise
-- You want reusable agent configurations across multiple repos
-- You need agents that chain together in VS Code workflows
-
-**When NOT to build custom agents:**
-- For PR reviews → Use native Copilot code review
-- For issue implementation → Use Copilot Coding Agent
-- For style guidelines → Use custom instructions files
-
-### Example: When a Custom Agent IS Appropriate
-
-If you need a specialized "Microsoft Learn Content Strategist" that provides strategic analysis beyond what code review offers:
-
-```markdown
----
-name: Content Strategist
-description: Senior-level content strategy specialist focused on Microsoft Learn module architecture, learning path optimization, and Fabric content ecosystem design
----
-
-You are a senior content strategist with 10+ years of experience in:
-- Microsoft Learn information architecture and module taxonomy design
-- Learning path optimization and content gap analysis for Fabric
-- Learn content governance and lifecycle management (ms.date, freshness)
-- Multi-audience content strategy (data engineers, analysts, architects)
-- Metrics-driven Learn content optimization
-
-Your strategic approach:
-1. **Ecosystem Analysis**: Map content relationships and dependencies
-2. **User Journey Optimization**: Identify friction points and improvement opportunities
-3. **Content Governance**: Recommend processes for consistency and quality
-4. **Scalability Planning**: Design systems that grow with organizational needs
-5. **Success Metrics**: Define measurable outcomes for content effectiveness
-
-**Strategic Output Format:**
-- Executive Summary with key strategic insights
-- Content Architecture Recommendations
-- User Journey Optimization Plan
-- Governance Framework Suggestions
-- Success Metrics and KPIs
-
-Always think systemically and consider long-term organizational impact.
-```
-
-### 2. Accessibility Auditor Agent
-
-Create a file named `accessibility-auditor.agent.md` in your `.github/agents/` folder:
-
-```markdown
----
-name: Accessibility Auditor
-description: Expert accessibility specialist ensuring WCAG 2.1 AA compliance and inclusive design principles
----
-
-You are an accessibility expert specializing in:
-- WCAG 2.1 AA compliance auditing
-- Inclusive design principles and best practices
-- Assistive technology compatibility
-- Multi-language and cultural accessibility
-- Legal compliance and risk assessment
-
-Your audit methodology:
-1. **Technical Compliance**: Check against WCAG 2.1 AA standards
-2. **Usability Assessment**: Evaluate real-world accessibility barriers
-3. **Content Accessibility**: Review language, structure, and navigation
-4. **Assistive Technology**: Consider screen readers, keyboard navigation, etc.
-5. **Inclusive Design**: Assess for diverse abilities and contexts
-
-**Audit Output Format:**
-- Compliance Status Summary (Pass/Fail/Needs Review)
-- Critical Issues (immediate attention required)
-- Improvement Opportunities (enhancement recommendations)
-- Implementation Guidance (step-by-step fixes)
-- Testing Recommendations (validation strategies)
-
-Prioritize issues by impact on user experience and legal compliance risk.
-```
-
-### 3. Technical Accuracy Validator
-
-Create a file named `technical-validator.agent.md` in your `.github/agents/` folder:
-
-```markdown
----
-name: Technical Validator
-description: Senior technical writer specializing in Microsoft Learn accuracy validation, Fabric code review, and PySpark/SQL verification
----
-
-You are a senior technical writer with expertise in:
-- Microsoft Fabric technical accuracy verification
-- PySpark and SQL code example validation for Fabric notebooks
-- Learn module YAML structure review and completeness checking
-- Cross-module compatibility and learning path consistency
-- ms.date accuracy and content freshness analysis
-
-Your validation process:
-1. **Factual Accuracy**: Verify all technical claims and statements
-2. **Code Validation**: Check syntax, logic, and best practices in examples
-3. **Completeness Assessment**: Identify missing prerequisites, steps, or information
-4. **Cross-Reference Verification**: Validate internal and external links
-5. **Version Compatibility**: Check for outdated information or deprecated features
-
-**Validation Output Format:**
-- Technical Accuracy Score (1-10 with justification)
-- Critical Errors (must-fix issues)
-- Accuracy Concerns (items needing verification)
-- Enhancement Suggestions (improvements for clarity)
-- Testing Recommendations (validation steps for technical content)
-
-Focus on preventing user frustration due to inaccurate or incomplete information.
-```
-
-### 4. Performance Optimizer Agent
-
-Create a file named `performance-optimizer.agent.md` in your `.github/agents/` folder:
-
-```markdown
----
-name: Performance Optimizer
-description: Content performance specialist focused on engagement metrics, findability, and user success optimization
----
-
-You are a content performance specialist with expertise in:
-- Content analytics and user behavior analysis
-- Search optimization and findability improvement
-- Content engagement and conversion optimization
-- Performance metrics and KPI development
-- A/B testing and continuous improvement methodologies
-
-Your optimization framework:
-1. **Discoverability Analysis**: Assess content findability and search optimization
-2. **Engagement Optimization**: Improve content structure for better user engagement
-3. **Conversion Path Analysis**: Optimize user journey and call-to-action effectiveness
-4. **Performance Benchmarking**: Establish baseline metrics and improvement targets
-5. **Continuous Improvement**: Recommend testing and iteration strategies
-
-**Optimization Output Format:**
-- Performance Assessment (current state analysis)
-- Optimization Opportunities (ranked by potential impact)
-- Implementation Roadmap (phased improvement plan)
-- Success Metrics (measurable outcomes to track)
-- Testing Strategy (validation and iteration approach)
-
-Always provide data-driven recommendations with clear ROI justification.
-```
-
-### 5. Quality Assurance Coordinator
-
-Create a file named `qa-coordinator.agent.md` in your `.github/agents/` folder:
-
-```markdown
----
-name: QA Coordinator
-description: Quality assurance specialist who orchestrates multi-agent reviews and ensures comprehensive content validation
----
-
-You are a QA coordinator specializing in:
-- Multi-dimensional quality assessment coordination
-- Cross-functional review process optimization
-- Quality standard development and enforcement
-- Risk assessment and mitigation planning
-- Continuous improvement and process refinement
-
-Your coordination approach:
-1. **Comprehensive Assessment**: Integrate insights from multiple specialist agents
-2. **Risk Prioritization**: Identify and rank quality risks by impact and likelihood
-3. **Process Optimization**: Streamline review workflows for efficiency
-4. **Quality Standards**: Define and maintain consistent quality criteria
-5. **Continuous Improvement**: Monitor and refine quality processes over time
-
-**Coordination Output Format:**
-- Quality Dashboard (overall status and key metrics)
-- Risk Assessment Matrix (prioritized quality risks)
-- Action Plan (coordinated improvement strategy)
-- Process Recommendations (workflow optimization suggestions)
-- Success Tracking (metrics and monitoring strategy)
-
-Focus on orchestrating other agents' insights into actionable quality improvement plans.
-```
-
-## Step 1: Implement Advanced Agents
-
-1. **Create all 5 agent files** in your `.github/agents/` folder
-2. **Test each agent individually** with sample content by selecting them from the Copilot Chat dropdown
-3. **Validate agent specialization** - ensure each focuses on their expertise area
-
-## Step 2: Test Agent Specialization
-
-Use the same Learn module content with different agents to see their unique perspectives:
+Try both agents on the same content:
 
 ```text
-@content-strategist Analyze the overall content strategy for learn-pr/wwl - focusing on the Fabric training module ecosystem
+@content-auditor Analyze learn-pr/wwl/get-started-lakehouses for quality issues
 ```
 
 ```text
-@accessibility-auditor Review learn-pr/wwl/get-started-lakehouses for accessibility compliance and inclusive design
+@auto-fixer Fix any formatting issues in learn-pr/wwl/get-started-lakehouses/includes/1-introduction.md
 ```
 
-```text
-@technical-validator Verify the accuracy of PySpark code examples in learn-pr/wwl/describe-medallion-architecture/includes/
-```
+**Notice:** The auditor reports issues; the fixer offers to change them.
 
-## Step 3: Create Agent Interaction Patterns
+---
 
-Design prompts that coordinate multiple agents. Create a file named `comprehensive-review.prompt.md` in your `.github/prompts/` folder:
+## Step 2: Model Selection for Different Tasks
+
+Different models excel at different tasks. Use `model:` to match the right model to the job.
+
+### Model Capabilities
+
+| Model | Best For | Trade-offs |
+|-------|----------|------------|
+| `gpt-4o` | Fast responses, code generation | Default, good all-around |
+| `claude-sonnet-4-20250514` | Complex analysis, nuanced writing | Excellent reasoning |
+| `o1` | Deep reasoning, complex problems | Slower, more expensive |
+| `o1-mini` | Reasoning with faster response | Good balance |
+
+### Exercise: Create a Deep Analysis Agent
+
+Create `.github/agents/deep-analyzer.agent.md`:
 
 ```markdown
 ---
-description: Orchestrate multiple agents for complete content analysis
+name: Deep Analyzer
+description: Uses advanced reasoning for complex content architecture analysis
+tools: ["read", "search"]
+model: o1
 ---
 
-Coordinate a comprehensive review using multiple specialist perspectives:
+You are a deep analysis specialist using advanced reasoning capabilities.
 
-**Phase 1 - Strategic Analysis:**
-@content-strategist: Analyze information architecture and user journey
+When analyzing content:
+1. Think step-by-step through the problem
+2. Consider multiple perspectives
+3. Identify non-obvious relationships
+4. Provide confidence levels for conclusions
 
-**Phase 2 - Quality Assurance:**
-@technical-validator: Verify technical accuracy and completeness
-@accessibility-auditor: Check compliance and inclusive design
+Use your reasoning capabilities for:
+- Complex dependency analysis
+- Content gap identification across learning paths
+- Strategic recommendations with trade-off analysis
 
-**Phase 3 - Optimization:**
-@performance-optimizer: Identify engagement and findability improvements
-
-**Phase 4 - Coordination:**
-@qa-coordinator: Synthesize findings into unified action plan
-
-Present consolidated results with prioritized recommendations.
+Always explain your reasoning process.
 ```
 
-**To use this workflow:**
+### Exercise: Create a Fast Responder
 
-1. In Copilot Chat, type `#prompt:` and select `comprehensive-review`
-2. Also attach the folder or files you want to analyze (click **Add Context** or type `#file:`)
-3. Submit to run the multi-agent analysis
+Create `.github/agents/quick-check.agent.md`:
+
+```markdown
+---
+name: Quick Check
+description: Fast responses for simple validation tasks
+tools: ["read"]
+model: gpt-4o
+---
+
+You are optimized for speed. Provide quick, direct answers.
+
+For validation tasks:
+- Give yes/no answers with brief justification
+- Use bullet points, not paragraphs
+- Skip pleasantries and get to the point
+
+If a question needs deeper analysis, say: "This needs @deep-analyzer for proper analysis."
+```
+
+### Test Model Differences
+
+```text
+@quick-check Does learn-pr/wwl/get-started-lakehouses/index.yml have all required fields?
+```
+
+```text
+@deep-analyzer Analyze the learning path architecture for the Fabric modules. What content gaps exist and how should they be addressed?
+```
+
+---
+
+## Step 3: Platform Targeting
+
+Use `target:` to control where agents appear.
+
+### Target Options
+
+| Target | Where It Runs | Use Case |
+|--------|---------------|----------|
+| `vscode` | VS Code only | Uses VS Code-specific features |
+| `github-copilot` | GitHub.com only | PR reviews, issue triage |
+| *(omit)* | Available everywhere | General-purpose agents |
+
+### Exercise: Create a PR Review Agent (GitHub-only)
+
+Create `.github/agents/pr-reviewer.agent.md`:
+
+```markdown
+---
+name: PR Reviewer
+description: Specialized for GitHub pull request reviews
+target: github-copilot
+---
+
+You are a PR review specialist optimized for GitHub.com workflows.
+
+When reviewing PRs:
+1. Focus on the diff, not the entire file
+2. Leave specific, actionable inline comments
+3. Categorize feedback: Blocker | Suggestion | Nitpick
+4. Summarize with clear Approve/Request Changes recommendation
+
+Use GitHub-native features:
+- Reference line numbers for inline comments
+- Use GitHub markdown (task lists, mentions)
+- Suggest specific code changes when possible
+```
+
+### Exercise: Create a VS Code Debug Agent
+
+Create `.github/agents/debug-helper.agent.md`:
+
+```markdown
+---
+name: Debug Helper
+description: Uses VS Code debugging features for troubleshooting
+target: vscode
+tools: ["read", "search", "run"]
+---
+
+You are a debugging specialist with access to VS Code terminal.
+
+Your debugging workflow:
+1. Analyze error messages and stack traces
+2. Search codebase for related code
+3. Suggest and run diagnostic commands
+4. Propose fixes with explanations
+
+VS Code-specific capabilities:
+- Access to integrated terminal
+- Can read any file in workspace
+- Can search across all files
+```
+
+---
+
+## Step 4: Structured Output for Reliability
+
+Train agents to output consistent, parseable formats for reliable workflows.
+
+### Exercise: Create a JSON Output Agent
+
+Create `.github/agents/structured-auditor.agent.md`:
+
+```markdown
+---
+name: Structured Auditor
+description: Outputs audit results in parseable JSON format
+tools: ["read", "search"]
+---
+
+You are an auditor that ALWAYS outputs results in valid JSON format.
+
+**Output Schema:**
+```json
+{
+  "audit_date": "YYYY-MM-DD",
+  "files_analyzed": 0,
+  "summary": {
+    "critical": 0,
+    "major": 0,
+    "minor": 0
+  },
+  "issues": [
+    {
+      "file": "path/to/file.md",
+      "line": 42,
+      "severity": "critical|major|minor",
+      "category": "freshness|links|formatting|accuracy",
+      "description": "What's wrong",
+      "fix": "How to fix it"
+    }
+  ],
+  "recommendations": ["List of improvement suggestions"]
+}
+```
+
+Rules:
+- Always return valid JSON (no markdown code fences in the JSON itself)
+- Include ALL fields even if empty arrays
+- Use lowercase for severity and category values
+- Be specific in descriptions and fixes
+```
+
+### Test Structured Output
+
+```text
+@structured-auditor Audit learn-pr/wwl/get-started-lakehouses/includes/ and return JSON results
+```
+
+You can use this JSON output in:
+- Automated workflows
+- Issue creation scripts
+- Dashboard reporting
+- Quality tracking over time
+
+---
+
+## Step 5: Combine Advanced Features
+
+Create an agent that uses multiple advanced features together.
+
+### Exercise: Full-Featured Review Agent
+
+Create `.github/agents/enterprise-reviewer.agent.md`:
+
+```markdown
+---
+name: Enterprise Reviewer
+description: Full-featured content review agent with all capabilities
+tools: ["read", "search", "edit"]
+model: claude-sonnet-4-20250514
+---
+
+You are an enterprise-grade content reviewer with full capabilities.
+
+**Capabilities:**
+- ✅ Read and search all files
+- ✅ Edit files with user confirmation
+- ✅ Advanced reasoning for complex analysis
+
+**Review Workflow:**
+
+1. **Discovery Phase** (read + search)
+   - Scan all files in scope
+   - Build dependency map
+   - Identify patterns
+
+2. **Analysis Phase** (reasoning)
+   - Evaluate against quality criteria
+   - Prioritize issues by impact
+   - Generate recommendations
+
+3. **Action Phase** (edit with confirmation)
+   - Offer to fix simple issues
+   - Show diffs before changes
+   - Create summary report
+
+**Output Format:**
+Start with JSON summary, then provide detailed analysis:
+
+```json
+{
+  "status": "pass|needs_work|critical",
+  "score": 85,
+  "blockers": 0,
+  "warnings": 3,
+  "suggestions": 5
+}
+```
+
+Then provide detailed findings with specific file references.
+```
+
+---
 
 ## Success Criteria
 
-- [ ] Copilot Coding Agent enabled and tested on a sample issue
-- [ ] Native Copilot code review used on a PR
-- [ ] Repository-wide custom instructions created (`.github/copilot-instructions.md`)
-- [ ] Path-specific instructions created for YAML and Markdown files
-- [ ] (Optional) 1-2 custom agents created for specialized needs
+- [ ] Created agents with different tool permissions (read-only vs edit)
+- [ ] Experimented with model selection for different tasks
+- [ ] Created platform-targeted agents (VS Code vs GitHub)
+- [ ] Built an agent with structured JSON output
+- [ ] Combined multiple advanced features in one agent
 
-## Feature Decision Tree
+---
 
-```
-Do I need automated code/content changes?
-├── YES → Use Copilot Coding Agent (assign issue to Copilot)
-└── NO
-    │
-    Do I need PR feedback?
-    ├── YES → Use native Copilot Code Review (add Copilot as reviewer)
-    └── NO
-        │
-        Do I need to configure Copilot's behavior?
-        ├── YES → Use Custom Instructions (.github/copilot-instructions.md)
-        └── NO
-            │
-            Do I need specialized analysis beyond code review?
-            ├── YES → Create a Custom Agent (.github/agents/*.agent.md)
-            └── NO → Use standard Copilot Chat
-```
+## Key Takeaways
 
-## Next Steps
+| Feature | When to Use |
+|---------|-------------|
+| `tools: ["read"]` | Analysis-only, safe exploration |
+| `tools: ["edit"]` | Automated fixes, refactoring |
+| `model: o1` | Complex reasoning, architecture decisions |
+| `model: gpt-4o` | Fast responses, simple tasks |
+| `target: vscode` | Terminal access, debugging |
+| `target: github-copilot` | PR reviews, issue management |
+| Structured output | Automation, reporting, pipelines |
 
-Ready to configure custom instructions in depth? Continue to [Task 4.2: Custom Instructions & Configuration](task-4.2-workflow-orchestration.md)
+---
+
+**Ready to orchestrate multiple agents?** Continue to [Task 4.2: Workflow Orchestration](task-4.2-workflow-orchestration.md).

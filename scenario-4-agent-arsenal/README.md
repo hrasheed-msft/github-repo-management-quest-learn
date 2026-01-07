@@ -4,7 +4,7 @@
 
 You've mastered the basics of repository management with GitHub Copilot. Now it's time to leverage GitHub's **native agent capabilities** and learn when to extend them with custom configurations. This scenario teaches you to use built-in features first, then customize when needed.
 
-**Duration:** 45-60 minutes  
+**Duration:** 40 minutes  
 **Difficulty:** Advanced
 
 ## Native GitHub Features First
@@ -47,17 +47,11 @@ This scenario simulates managing the Microsoft Learn Fabric training modules wit
 
 ## Scenario Structure
 
-### Task 4.1: Native Agent Features
-Learn to use GitHub's built-in Copilot Coding Agent and Code Review features before building custom solutions.
+### Task 4.1: Advanced Agent Configuration
+Master advanced agent configuration: tool permissions, model selection, platform targeting, and structured outputs.
 
-### Task 4.2: Custom Instructions & Configuration
-Configure Copilot with repository-specific instructions, path-based rules, and review customization.
-
-### Task 4.3: Advanced Custom Agents
-Create specialized agents for complex workflows that go beyond native capabilities.
-
-### Task 4.4: Quality Assurance Automation
-Build automated quality pipelines using GitHub Actions integrated with Copilot.
+### Task 4.2: MCP Tools and External Integrations
+Extend agent capabilities using MCP (Model Context Protocol) tools to query Microsoft documentation and validate content accuracy.
 
 ## Prerequisites
 
@@ -86,11 +80,10 @@ learn-pr/wwl/                   # Real Fabric training modules to practice with
 ## Success Metrics
 
 By the end of this scenario, you should have:
-- **Copilot Coding Agent enabled** and tested on sample issues
-- **Automatic code review configured** with custom instructions
-- **Path-specific instructions** for different content types
-- **2-3 custom agents** for specialized workflows (when needed)
-- **Quality automation pipeline** using GitHub Actions
+- **Advanced agent configurations** using tools, models, and structured outputs
+- **MCP-enabled agents** that query Microsoft documentation
+- **Documentation verification workflows** that validate content accuracy
+- **Hybrid agents** combining local and external capabilities
 
 ## Real-World Applications
 
