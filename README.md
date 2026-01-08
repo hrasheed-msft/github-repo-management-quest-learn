@@ -127,13 +127,6 @@ If your fork falls behind:
 
 ---
 
-## Additional Resources
-
-- [Deployment and Facilitation Guide](DEPLOYMENT_AND_FACILITATION_GUIDE.md) — For instructors running this quest
-- [Copilot Setup Guide](COPILOT_SETUP_GUIDE.md) — Detailed Copilot configuration
-
----
-
 **Quest Version:** 2.0  
 **Last Updated:** 2025-01-06  
 **Content:** Microsoft Learn  
