@@ -216,19 +216,38 @@ Verify the technical accuracy of learn-pr/wwl/get-started-lakehouses/includes/2-
 
 ### Understanding Handoffs
 
-The `handoffs` property tells an agent which other agents it can delegate to:
+The `handoffs` property defines buttons that appear after a response, letting users transition to another agent with context. Each handoff is an object with:
+
+| Property | Required | Description |
+|----------|----------|-------------|
+| `label` | Yes | Button text shown to user |
+| `agent` | Yes | Target agent identifier (filename without `.agent.md`) |
+| `prompt` | Yes | Pre-filled prompt for the target agent |
+| `send` | No | Auto-submit prompt (default: `false`) |
 
 ```yaml
 ---
-name: Workflow Coordinator
-handoffs: ['content-auditor', 'auto-fixer', 'docs-researcher']
+name: Content Auditor
+handoffs:
+  - label: Fix These Issues
+    agent: auto-fixer
+    prompt: Fix the issues identified in the audit above.
+    send: false
 ---
 ```
 
-When an agent has `handoffs` defined, it can:
-- Recognize when a task should go to a specialist
-- Suggest the appropriate next agent
-- Pass relevant context to the next step
+When users complete a chat with this agent, they see a **"Fix These Issues"** button that switches to `@auto-fixer` with the prompt pre-filled.
+
+> **💡 Where Do Handoff Buttons Appear?**
+>
+> Handoff buttons are rendered by **VS Code's Copilot Chat UI** after the agent's response completes. They appear at the bottom of the response as clickable buttons.
+>
+> **Requirements:**
+> - VS Code 1.106 or later
+> - Latest GitHub Copilot extension
+> - Must be in VS Code Copilot Chat (not GitHub.com or other contexts)
+>
+> If you don't see buttons, use **manual agent chaining** (shown in Step 6).
 
 ### Agent Succession Patterns
 
@@ -253,7 +272,23 @@ Create `.github/agents/workflow-coordinator.agent.md`:
 name: Workflow Coordinator
 description: Orchestrates multi-agent workflows by delegating to specialist agents
 tools: ['read', 'search']
-handoffs: ['content-auditor', 'auto-fixer', 'docs-researcher', 'code-validator']
+handoffs:
+  - label: Run Content Audit
+    agent: content-auditor
+    prompt: Audit the files identified above for quality issues.
+    send: false
+  - label: Fix Issues
+    agent: auto-fixer
+    prompt: Fix the issues identified above.
+    send: false
+  - label: Research Docs
+    agent: docs-researcher
+    prompt: Research the topics above in Microsoft Learn documentation.
+    send: false
+  - label: Validate Code
+    agent: code-validator
+    prompt: Validate the code samples identified above.
+    send: false
 ---
 
 You are a workflow coordinator that manages multi-agent content review pipelines.
@@ -300,35 +335,49 @@ Update your `content-auditor` agent to hand off to the fixer:
 name: Content Auditor
 description: Analyzes Learn modules for quality issues without making changes
 tools: ['read', 'search']
-handoffs: ['auto-fixer']
+handoffs:
+  - label: Fix These Issues
+    agent: Auto Fixer
+    prompt: Fix the formatting and simple issues identified in the audit above.
+    send: false
 ---
 
 You are a read-only content auditor. You can analyze and search files but CANNOT modify them.
 
 [... existing instructions ...]
-
-**After completing your audit:**
-If issues are found that can be auto-fixed, offer to hand off to @auto-fixer:
-"I found [N] fixable issues. Would you like me to hand off to @auto-fixer to address them?"
 ```
 
+After completing an audit, users will see a **"Fix These Issues"** button that switches to `@auto-fixer` with context from the audit.
+
 ### Test the Agent Chain
+
+Handoff buttons appear automatically in VS Code after an agent responds. If buttons don't appear (older VS Code version or different context), use manual chaining.
+
+**Option A: Using Handoff Buttons (if available)**
+
+1. Run `@workflow-coordinator Run a full content review on learn-pr/wwl/get-started-lakehouses`
+2. After the response, look for buttons at the bottom: **"Run Content Audit"**, **"Fix Issues"**, etc.
+3. Click **"Run Content Audit"** to switch to `@content-auditor` with context
+
+**Option B: Manual Chain Execution**
+
+If handoff buttons don't appear, run agents in succession manually:
 
 **Step 1: Start with the coordinator**
 ```text
 @workflow-coordinator Run a full content review on learn-pr/wwl/get-started-lakehouses
 ```
 
-The coordinator will outline the workflow and begin delegating.
+The coordinator will outline the workflow and identify files to review.
 
-**Step 2: Manual chain execution**
-If handoffs aren't automatic, run agents in succession:
-
+**Step 2: Run the auditor**
 ```text
 @content-auditor Audit learn-pr/wwl/get-started-lakehouses/includes/ - identify all issues
 ```
 
-Then take the output and:
+**Step 3: Run the fixer with audit results**
+
+Copy relevant findings from the auditor and pass them to the fixer:
 
 ```text
 @auto-fixer Based on these audit findings, fix the formatting issues in learn-pr/wwl/get-started-lakehouses/includes/
@@ -336,7 +385,7 @@ Then take the output and:
 [paste relevant issues from auditor]
 ```
 
-**Step 3: Verify with documentation**
+**Step 4: Verify with documentation**
 ```text
 @docs-researcher Verify that the lakehouse concepts in learn-pr/wwl/get-started-lakehouses are accurate against current Microsoft Fabric documentation
 ```
