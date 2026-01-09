@@ -1,12 +1,12 @@
-# Task 4.2: MCP Tools and External Integrations
+# Task 4.2: MCP Tools, Agent Chaining, and Workflow Orchestration
 
-**Duration:** 20 minutes  
+**Duration:** 25 minutes  
 **Difficulty:** Advanced  
 **Prerequisites:** Task 4.1 (Advanced Agent Configuration)
 
 ## Objective
 
-Learn to extend agent capabilities using **MCP (Model Context Protocol) tools** - external integrations that let agents query documentation, search code samples, and access external data sources.
+Learn to extend agent capabilities using **MCP (Model Context Protocol) tools** and master **agent chaining** with handoffs to build sophisticated multi-agent workflows that divide complex tasks among specialized agents.
 
 ## Background
 
@@ -206,7 +206,208 @@ Verify the technical accuracy of learn-pr/wwl/get-started-lakehouses/includes/2-
 
 ---
 
-## Step 5: Understand MCP Tool Limitations
+## Step 5: Agent Chaining with Handoffs
+
+**Agent chaining** lets you run multiple specialized agents in succession, passing context from one to the next. This enables powerful workflows where each agent handles what it does best.
+
+> **⚠️ VS Code Only Feature**
+>
+> The `handoffs` property is supported in VS Code custom agents but **not** on GitHub.com. For cross-platform workflows, use manual invocation patterns instead.
+
+### Understanding Handoffs
+
+The `handoffs` property tells an agent which other agents it can delegate to:
+
+```yaml
+---
+name: Workflow Coordinator
+handoffs: ['content-auditor', 'auto-fixer', 'docs-researcher']
+---
+```
+
+When an agent has `handoffs` defined, it can:
+- Recognize when a task should go to a specialist
+- Suggest the appropriate next agent
+- Pass relevant context to the next step
+
+### Agent Succession Patterns
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| **Pipeline** | A → B → C (linear) | Audit → Fix → Verify |
+| **Triage** | Coordinator → Specialist | Router picks best agent |
+| **Review Loop** | Analyze → Fix → Re-analyze | Iterative improvement |
+
+---
+
+## Step 6: Build an Agent Chain
+
+Create a coordinated workflow where agents work in succession.
+
+### Exercise: Create a Workflow Coordinator
+
+Create `.github/agents/workflow-coordinator.agent.md`:
+
+```markdown
+---
+name: Workflow Coordinator
+description: Orchestrates multi-agent workflows by delegating to specialist agents
+tools: ['read', 'search']
+handoffs: ['content-auditor', 'auto-fixer', 'docs-researcher', 'code-validator']
+---
+
+You are a workflow coordinator that manages multi-agent content review pipelines.
+
+**Your role:**
+- Analyze incoming requests to determine the best workflow
+- Delegate tasks to specialist agents in the right order
+- Track progress and summarize results
+
+**Available specialists:**
+- `@content-auditor` - Read-only analysis, finds issues
+- `@auto-fixer` - Fixes formatting and simple issues
+- `@docs-researcher` - Searches Microsoft Learn for authoritative info
+- `@code-validator` - Validates code against official samples
+
+**Standard workflows:**
+
+1. **Full Content Review**
+   - Step 1: @content-auditor scans for all issues
+   - Step 2: @docs-researcher verifies technical accuracy
+   - Step 3: @auto-fixer addresses fixable issues
+   - Step 4: Report summary with remaining items
+
+2. **Quick Validation**
+   - Step 1: @content-auditor for high-level scan
+   - Step 2: Report findings (no fixes)
+
+3. **Technical Accuracy Check**
+   - Step 1: @docs-researcher finds current documentation
+   - Step 2: @code-validator checks code samples
+   - Step 3: Report discrepancies
+
+**When invoked, ask which workflow to run or analyze the request to choose automatically.**
+
+Always hand off to specialists rather than doing their work yourself.
+```
+
+### Exercise: Update Agents with Handoff Awareness
+
+Update your `content-auditor` agent to hand off to the fixer:
+
+```markdown
+---
+name: Content Auditor
+description: Analyzes Learn modules for quality issues without making changes
+tools: ['read', 'search']
+handoffs: ['auto-fixer']
+---
+
+You are a read-only content auditor. You can analyze and search files but CANNOT modify them.
+
+[... existing instructions ...]
+
+**After completing your audit:**
+If issues are found that can be auto-fixed, offer to hand off to @auto-fixer:
+"I found [N] fixable issues. Would you like me to hand off to @auto-fixer to address them?"
+```
+
+### Test the Agent Chain
+
+**Step 1: Start with the coordinator**
+```text
+@workflow-coordinator Run a full content review on learn-pr/wwl/get-started-lakehouses
+```
+
+The coordinator will outline the workflow and begin delegating.
+
+**Step 2: Manual chain execution**
+If handoffs aren't automatic, run agents in succession:
+
+```text
+@content-auditor Audit learn-pr/wwl/get-started-lakehouses/includes/ - identify all issues
+```
+
+Then take the output and:
+
+```text
+@auto-fixer Based on these audit findings, fix the formatting issues in learn-pr/wwl/get-started-lakehouses/includes/
+
+[paste relevant issues from auditor]
+```
+
+**Step 3: Verify with documentation**
+```text
+@docs-researcher Verify that the lakehouse concepts in learn-pr/wwl/get-started-lakehouses are accurate against current Microsoft Fabric documentation
+```
+
+---
+
+## Step 7: Create Pipeline Prompts
+
+Reusable prompts can orchestrate agent chains without needing the coordinator.
+
+### Exercise: Create a Review Pipeline Prompt
+
+Create `.github/prompts/full-review-pipeline.prompt.md`:
+
+```markdown
+---
+description: Runs the full content review pipeline using multiple agents in succession
+---
+
+# Full Content Review Pipeline
+
+Execute a comprehensive content review using the agent chain:
+
+## Phase 1: Discovery
+Use @content-auditor to scan all files and identify issues:
+- YAML validation
+- Link checking
+- Formatting issues
+- Freshness (ms.date)
+
+## Phase 2: Technical Verification
+Use @docs-researcher to verify:
+- Technical claims against current Microsoft documentation
+- Code samples against official examples
+- API references and syntax
+
+## Phase 3: Automated Fixes
+Use @auto-fixer to address:
+- Formatting corrections
+- Simple typo fixes
+- Language specifier additions
+
+Only fix items that are clearly safe. Skip anything requiring judgment.
+
+## Phase 4: Summary Report
+Compile a final report with:
+
+| Phase | Issues Found | Auto-Fixed | Remaining |
+|-------|--------------|------------|-----------|
+| Discovery | N | N | N |
+| Verification | N | N/A | N |
+| Fixes | N/A | N | N |
+
+**Remaining items requiring manual review:**
+[List of items that couldn't be auto-fixed]
+
+**Documentation sources consulted:**
+[List of URLs from docs-researcher]
+```
+
+### Test the Pipeline Prompt
+
+```text
+#prompt:full-review-pipeline
+
+Run the full review pipeline on learn-pr/wwl/get-started-lakehouses
+```
+
+---
+
+## Step 8: Understand MCP Tool Limitations
 
 MCP tools are powerful but have constraints:
 
@@ -226,7 +427,7 @@ MCP tools are powerful but have constraints:
 
 ---
 
-## Step 6: Create a Hybrid Workflow Agent
+## Step 9: Create a Hybrid Workflow Agent
 
 Build an agent that combines local and MCP capabilities.
 
@@ -296,9 +497,12 @@ Always cite documentation sources for accuracy claims.
 ## Success Criteria
 
 - [ ] Understood how MCP tools extend agent capabilities
-- [ ] Created agents that use `mcp` in their tools list
+- [ ] Created agents that use `microsoft-docs/*` in their tools list
 - [ ] Successfully queried Microsoft Learn documentation via Copilot
 - [ ] Found and used official code samples
+- [ ] **Created a workflow coordinator with `handoffs`**
+- [ ] **Ran agents in succession (audit → fix → verify)**
+- [ ] **Built a pipeline prompt for multi-agent workflows**
 - [ ] Built a hybrid workflow combining local + MCP tools
 - [ ] Created structured output for documentation verification
 
@@ -311,6 +515,9 @@ Always cite documentation sources for accuracy claims.
 | **MCP tools** | Connect agents to external data sources |
 | **Docs search** | Get current, authoritative information |
 | **Code samples** | Find official, tested examples |
+| **`handoffs`** | Define which agents can delegate to others (VS Code only) |
+| **Agent chaining** | Run specialists in succession for complex workflows |
+| **Pipeline prompts** | Reusable orchestration without coordinator agent |
 | **Hybrid workflows** | Combine local analysis with external verification |
 | **Citation** | Always link to source documentation |
 
