@@ -280,7 +280,6 @@ You are a Learn module auditor with access to both local files and Microsoft doc
     }
   ]
 }
-```
 
 Always cite documentation sources for accuracy claims.
 ```
